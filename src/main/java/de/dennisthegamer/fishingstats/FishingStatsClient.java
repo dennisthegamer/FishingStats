@@ -12,11 +12,15 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.PauseScreen;
+import net.minecraft.client.multiplayer.ServerData;
+import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.storage.LevelResource;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +29,12 @@ public class FishingStatsClient implements ClientModInitializer {
 
     public static final String MOD_ID = "fishingstats";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+
+    /** Running Minecraft version; persisted sessions are only restored on a match. */
+    public static final String GAME_VERSION = FabricLoader.getInstance()
+            .getModContainer("minecraft")
+            .map(mod -> mod.getMetadata().getVersion().getFriendlyString())
+            .orElse("unknown");
 
     private static final KeyMapping.Category CATEGORY =
             new KeyMapping.Category(Identifier.fromNamespaceAndPath(MOD_ID, MOD_ID));
@@ -75,11 +85,29 @@ public class FishingStatsClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(this::onTick);
     }
 
+    /**
+     * Stable identity of the joined world: the level directory in singleplayer, the
+     * server address in multiplayer. Empty if neither is known - such sessions are
+     * never restored.
+     */
+    private static String worldKey(Minecraft client) {
+        IntegratedServer server = client.getSingleplayerServer();
+        if (server != null) {
+            return "local:" + server.getWorldPath(LevelResource.ROOT).toAbsolutePath().normalize();
+        }
+        ServerData data = client.getCurrentServer();
+        if (data != null && data.ip != null && !data.ip.isEmpty()) {
+            return "server:" + data.ip;
+        }
+        return "";
+    }
+
     private void onTick(Minecraft client) {
         boolean inWorld = client.player != null && client.level != null;
 
         if (inWorld && !wasInWorld) {
             FishingDataStore.getInstance().loadFromDisk();
+            SessionManager.getInstance().setWorld(worldKey(client));
             SessionManager.getInstance().pause();
             String keyName = sessionToggleKey.getTranslatedKeyMessage().getString();
             FishingStatsConfig config = FishingStatsConfig.getInstance();

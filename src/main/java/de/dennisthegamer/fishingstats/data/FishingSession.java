@@ -21,6 +21,13 @@ public class FishingSession {
     public long pauseStartMs;
     public String biomePrimary = "";
     public String dimension = "";
+    /**
+     * Identity of the world this session belongs to ("local:<world dir>" or
+     * "server:<address>"). A persisted session is only restored in the same world.
+     */
+    public String worldId = "";
+    /** Minecraft version the session was recorded with; restore requires a match. */
+    public String gameVersion = "";
     public int totalCasts;
     public List<CatchRecord> catches = new ArrayList<>();
 

@@ -44,11 +44,13 @@ public class FishingDataStore {
         return Collections.unmodifiableList(sessions);
     }
 
-    public FishingSession startSession(long now, String dimension) {
+    public FishingSession startSession(long now, String dimension, String worldId) {
         FishingSession session = new FishingSession();
         session.id = nextId();
         session.startTime = now;
         session.dimension = dimension;
+        session.worldId = worldId;
+        session.gameVersion = FishingStatsClient.GAME_VERSION;
         sessions.add(session);
         return session;
     }
@@ -86,9 +88,15 @@ public class FishingDataStore {
             for (FishingSession s : data) {
                 if (s != null) {
                     if (s.catches == null) s.catches = new ArrayList<>();
+                    if (s.worldId == null) s.worldId = "";
+                    if (s.gameVersion == null) s.gameVersion = "";
                     // A session left open is closed at its last known activity - unless
-                    // persistSessions keeps it restorable (SessionManager.restoreSession)
-                    if (s.endTime == 0 && !FishingStatsConfig.getInstance().persistSessions) {
+                    // persistSessions keeps it restorable (SessionManager.restoreSession).
+                    // Sessions without a world binding (recorded before worldId existed)
+                    // can never be matched to a world, so they are always closed.
+                    boolean restorable = FishingStatsConfig.getInstance().persistSessions
+                            && !s.worldId.isEmpty();
+                    if (s.endTime == 0 && !restorable) {
                         long lastActivity = s.startTime;
                         for (CatchRecord c : s.catches) lastActivity = Math.max(lastActivity, c.timestamp);
                         s.endTime = lastActivity;

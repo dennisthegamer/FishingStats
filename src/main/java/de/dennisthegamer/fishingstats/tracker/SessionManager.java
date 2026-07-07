@@ -21,6 +21,8 @@ public class SessionManager {
     private FishingSession active;
     private long lastActivityMs;
     private boolean paused = true;
+    /** Identity of the currently joined world; set on world join, empty when unknown. */
+    private String worldKey = "";
 
     private SessionManager() {}
 
@@ -30,6 +32,18 @@ public class SessionManager {
 
     public FishingSession getActiveSession() {
         return active;
+    }
+
+    /** Called on world join before any restore; sessions are bound to this world. */
+    public void setWorld(String worldKey) {
+        this.worldKey = worldKey == null ? "" : worldKey;
+    }
+
+    /** A session may only be continued in the world and game version it was started in. */
+    private boolean belongsToCurrentWorld(FishingSession session) {
+        return !worldKey.isEmpty()
+                && worldKey.equals(session.worldId)
+                && FishingStatsClient.GAME_VERSION.equals(session.gameVersion);
     }
 
     public boolean isPaused() {
@@ -75,7 +89,7 @@ public class SessionManager {
             endSession();
         }
         if (active == null) {
-            active = FishingDataStore.getInstance().startSession(now, dimension);
+            active = FishingDataStore.getInstance().startSession(now, dimension, worldKey);
             FishingStatsClient.LOGGER.info("Fishing session #{} started", active.id);
         }
         active.totalCasts++;
@@ -100,16 +114,23 @@ public class SessionManager {
     }
 
     /**
-     * Adopts a still-open session on world join (persistSessions). The session was left
-     * with pauseStartMs set, so the whole offline gap is booked as paused time on resume.
-     * Returns true if a session was restored.
+     * Adopts a still-open session on world join (persistSessions). Only sessions started
+     * in the same world and game version are restored; open sessions of other worlds stay
+     * open in the store and are picked up again when their world is rejoined. The session
+     * was left with pauseStartMs set, so the whole offline gap is booked as paused time
+     * on resume. Returns true if a session was restored.
      */
     public boolean restoreSession() {
         paused = true;
+        if (active != null && !belongsToCurrentWorld(active)) {
+            // Same client run, different world: never carry the session over
+            active = null;
+        }
         if (active == null) {
             FishingSession newest = null;
             for (FishingSession s : FishingDataStore.getInstance().getSessions()) {
-                if (s.isActive() && (newest == null || s.startTime > newest.startTime)) {
+                if (s.isActive() && belongsToCurrentWorld(s)
+                        && (newest == null || s.startTime > newest.startTime)) {
                     newest = s;
                 }
             }

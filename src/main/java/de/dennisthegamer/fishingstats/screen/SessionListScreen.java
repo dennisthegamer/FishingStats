@@ -90,11 +90,14 @@ public class SessionListScreen extends FishingStatsTabScreen {
 
             // Line 1: date + [active] ..... duration
             String date = StatsFormat.dateTime(session.startTime);
-            if (session.isActive()) {
+            // Only the session the manager is tracking counts as active in the UI - an
+            // open session from another world (persistSessions) is merely restorable
+            boolean isCurrent = session == SessionManager.getInstance().getActiveSession();
+            if (isCurrent) {
                 date += " " + I18n.get("fishingstats.sessions.active");
             }
             graphics.text(font, date, contentX + PADDING, entryY + 3,
-                    session.isActive() ? 0xFF55FF55 : TEXT_COLOR, true);
+                    isCurrent ? 0xFF55FF55 : TEXT_COLOR, true);
             String duration = session.formattedDuration();
             graphics.text(font, duration, width - font.width(duration) - PADDING, entryY + 3, MUTED_COLOR, true);
 

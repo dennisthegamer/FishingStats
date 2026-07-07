@@ -1,10 +1,10 @@
 package de.dennisthegamer.fishingstats.data;
 
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraft.registry.Registries;
+import net.minecraft.util.Identifier;
 
 import java.util.Set;
 
@@ -80,10 +80,12 @@ public enum CatchCategory {
     }
 
     public static Item itemById(String itemId) {
-        return BuiltInRegistries.ITEM.getValue(Identifier.parse(itemId));
+        // getOptionalValue keeps the same intermediary across all supported versions,
+        // unlike Registry.get(Identifier)
+        return Registries.ITEM.getOptionalValue(Identifier.of(itemId)).orElse(Items.AIR);
     }
 
     public static String idOf(Item item) {
-        return BuiltInRegistries.ITEM.getKey(item).toString();
+        return Registries.ITEM.getId(item).toString();
     }
 }

@@ -1,6 +1,6 @@
 package de.dennisthegamer.fishingstats.screen;
 
-import net.minecraft.client.gui.Font;
+import net.minecraft.client.font.TextRenderer;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -44,11 +44,11 @@ public final class StatsFormat {
         return String.format("%.1fs", ms / 1000.0);
     }
 
-    public static String truncate(Font font, String text, int maxWidth) {
-        if (font.width(text) <= maxWidth) return text;
+    public static String truncate(TextRenderer font, String text, int maxWidth) {
+        if (font.getWidth(text) <= maxWidth) return text;
         String ellipsis = "...";
-        int ellipsisWidth = font.width(ellipsis);
-        while (text.length() > 1 && font.width(text) + ellipsisWidth > maxWidth) {
+        int ellipsisWidth = font.getWidth(ellipsis);
+        while (text.length() > 1 && font.getWidth(text) + ellipsisWidth > maxWidth) {
             text = text.substring(0, text.length() - 1);
         }
         return text + ellipsis;

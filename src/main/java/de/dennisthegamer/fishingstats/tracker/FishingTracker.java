@@ -6,24 +6,21 @@ import de.dennisthegamer.fishingstats.data.CatchRecord;
 import de.dennisthegamer.fishingstats.data.RodEnchantments;
 import de.dennisthegamer.fishingstats.mixin.FishingHookAccessor;
 import de.dennisthegamer.fishingstats.render.FishingStatsHud;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Holder;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.projectile.FishingHook;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraft.world.item.enchantment.Enchantments;
-import net.minecraft.world.item.enchantment.ItemEnchantments;
-import net.minecraft.core.component.DataComponents;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.ItemEnchantmentsComponent;
+import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.enchantment.Enchantments;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.ItemEntity;
+import net.minecraft.entity.projectile.FishingBobberEntity;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.World;
 
 /**
  * Client-side catch detection. There is no loot-generation hook on the client (that code
@@ -48,13 +45,13 @@ public class FishingTracker {
     private boolean wasBiting;
     private long castTimeMs;
     private long biteTimeMs = -1;
-    private Vec3 lastHookPos;
+    private Vec3d lastHookPos;
     private boolean biteOpenWater;
     private RodEnchantments rodSnapshot = new RodEnchantments();
 
     // Pending loot after a retrieve-while-biting
     private long expectingUntilMs;
-    private Vec3 expectedPos;
+    private Vec3d expectedPos;
     private long expectedTimeToBite;
     private boolean expectedOpenWater;
     private RodEnchantments expectedRod;
@@ -74,27 +71,27 @@ public class FishingTracker {
         candidateItemId = -1;
     }
 
-    public void tick(Minecraft client) {
-        LocalPlayer player = client.player;
-        Level level = client.level;
+    public void tick(MinecraftClient client) {
+        ClientPlayerEntity player = client.player;
+        World level = client.world;
         if (player == null || level == null) {
             reset();
             return;
         }
 
         long now = System.currentTimeMillis();
-        FishingHook hook = player.fishing;
+        FishingBobberEntity hook = player.fishHook;
 
         if (hook != null && hook.getId() != hookId) {
-            onCast(hook, player, now);
+            onCast(hook, player, level, now);
         }
 
         if (hook != null) {
-            lastHookPos = hook.position();
+            lastHookPos = hook.getEntityPos();
             boolean biting = ((FishingHookAccessor) hook).fishingStats$isBiting();
             if (biting && !wasBiting) {
                 biteTimeMs = now;
-                biteOpenWater = OpenWaterCalculator.isOpenWater(level, hook.blockPosition());
+                biteOpenWater = OpenWaterCalculator.isOpenWater(level, hook.getBlockPos());
             }
             wasBiting = biting;
         } else if (hookId != -1) {
@@ -108,18 +105,18 @@ public class FishingTracker {
         SessionManager.getInstance().tick(now);
     }
 
-    private void onCast(FishingHook hook, LocalPlayer player, long now) {
+    private void onCast(FishingBobberEntity hook, ClientPlayerEntity player, World level, long now) {
         hookId = hook.getId();
         wasBiting = false;
         castTimeMs = now;
         biteTimeMs = -1;
         biteOpenWater = false;
-        lastHookPos = hook.position();
+        lastHookPos = hook.getEntityPos();
         rodSnapshot = readRodEnchantments(player);
-        SessionManager.getInstance().onCast(now, dimensionId(player.level()));
+        SessionManager.getInstance().onCast(now, dimensionId(level));
     }
 
-    private void onHookGone(Level level, long now) {
+    private void onHookGone(World level, long now) {
         // Watch for loot after EVERY retrieve, not only when a bite was observed: auto-fishing
         // mods reel in within milliseconds of the bite, so the synced biting flag can vanish
         // between two client ticks and is never sampled. A retrieve without a catch spawns no
@@ -130,7 +127,7 @@ public class FishingTracker {
             expectedTimeToBite = biteTimeMs > 0 ? biteTimeMs - castTimeMs : -1;
             expectedOpenWater = wasBiting
                     ? biteOpenWater
-                    : OpenWaterCalculator.isOpenWater(level, BlockPos.containing(lastHookPos));
+                    : OpenWaterCalculator.isOpenWater(level, BlockPos.ofFloored(lastHookPos));
             expectedRod = rodSnapshot;
             candidateItemId = -1;
         }
@@ -138,7 +135,7 @@ public class FishingTracker {
         wasBiting = false;
     }
 
-    private void watchForLoot(Level level, long now) {
+    private void watchForLoot(World level, long now) {
         if (now > expectingUntilMs) {
             expectingUntilMs = 0;
             candidateItemId = -1;
@@ -146,11 +143,11 @@ public class FishingTracker {
         }
 
         if (candidateItemId == -1) {
-            AABB box = new AABB(
+            Box box = new Box(
                     expectedPos.x - LOOT_RADIUS, expectedPos.y - LOOT_RADIUS, expectedPos.z - LOOT_RADIUS,
                     expectedPos.x + LOOT_RADIUS, expectedPos.y + LOOT_RADIUS, expectedPos.z + LOOT_RADIUS);
-            for (ItemEntity item : level.getEntitiesOfClass(ItemEntity.class, box)) {
-                if (item.tickCount <= MAX_ITEM_AGE_TICKS) {
+            for (ItemEntity item : level.getEntitiesByClass(ItemEntity.class, box, item -> true)) {
+                if (item.age <= MAX_ITEM_AGE_TICKS) {
                     candidateItemId = item.getId();
                     break;
                 }
@@ -158,9 +155,9 @@ public class FishingTracker {
         }
 
         if (candidateItemId != -1) {
-            Entity entity = level.getEntity(candidateItemId);
-            if (entity instanceof ItemEntity item && !item.getItem().isEmpty()) {
-                recordCatch(level, item.getItem(), now);
+            Entity entity = level.getEntityById(candidateItemId);
+            if (entity instanceof ItemEntity item && !item.getStack().isEmpty()) {
+                recordCatch(level, item.getStack(), now);
                 expectingUntilMs = 0;
                 candidateItemId = -1;
             } else if (entity == null) {
@@ -170,7 +167,7 @@ public class FishingTracker {
         }
     }
 
-    private void recordCatch(Level level, ItemStack stack, long now) {
+    private void recordCatch(World level, ItemStack stack, long now) {
         FishingStatsConfig config = FishingStatsConfig.getInstance();
         CatchCategory category = CatchCategory.classify(stack.getItem());
         String rarity = CatchCategory.rarityOf(stack.getItem());
@@ -186,7 +183,7 @@ public class FishingTracker {
         record.detail = bookDetail(stack);
         record.category = category.name();
         record.rarity = rarity;
-        BlockPos pos = BlockPos.containing(expectedPos.x, expectedPos.y, expectedPos.z);
+        BlockPos pos = BlockPos.ofFloored(expectedPos.x, expectedPos.y, expectedPos.z);
         record.biome = biomeId(level, pos);
         record.dimension = dimensionId(level);
         record.posX = pos.getX();
@@ -201,49 +198,50 @@ public class FishingTracker {
 
     /** "minecraft:mending 1, minecraft:unbreaking 3" for enchanted books, otherwise null. */
     private static String bookDetail(ItemStack stack) {
-        if (!stack.is(Items.ENCHANTED_BOOK)) return null;
-        ItemEnchantments stored = stack.get(DataComponents.STORED_ENCHANTMENTS);
-        if (stored == null || stored.isEmpty()) return null;
+        if (!stack.isOf(Items.ENCHANTED_BOOK)) return null;
+        // For enchanted books this returns the stored enchantments component
+        ItemEnchantmentsComponent stored = EnchantmentHelper.getEnchantments(stack);
+        if (stored.isEmpty()) return null;
         StringBuilder sb = new StringBuilder();
-        stored.entrySet().forEach(entry -> {
+        stored.getEnchantmentEntries().forEach(entry -> {
             if (sb.length() > 0) sb.append(", ");
-            entry.getKey().unwrapKey().ifPresent(key -> sb.append(key.identifier()));
+            entry.getKey().getKey().ifPresent(key -> sb.append(key.getValue()));
             sb.append(' ').append(entry.getIntValue());
         });
         return sb.toString();
     }
 
-    private static RodEnchantments readRodEnchantments(LocalPlayer player) {
-        ItemStack rod = player.getMainHandItem();
-        if (!rod.is(Items.FISHING_ROD)) {
-            rod = player.getOffhandItem();
+    private static RodEnchantments readRodEnchantments(ClientPlayerEntity player) {
+        ItemStack rod = player.getMainHandStack();
+        if (!rod.isOf(Items.FISHING_ROD)) {
+            rod = player.getOffHandStack();
         }
-        if (!rod.is(Items.FISHING_ROD)) return new RodEnchantments();
+        if (!rod.isOf(Items.FISHING_ROD)) return new RodEnchantments();
         try {
-            var registry = player.level().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
-            Holder<Enchantment> luck = registry.getOrThrow(Enchantments.LUCK_OF_THE_SEA);
-            Holder<Enchantment> lure = registry.getOrThrow(Enchantments.LURE);
-            Holder<Enchantment> unbreaking = registry.getOrThrow(Enchantments.UNBREAKING);
-            Holder<Enchantment> mending = registry.getOrThrow(Enchantments.MENDING);
-            var customName = rod.get(DataComponents.CUSTOM_NAME);
-            return new RodEnchantments(
-                    EnchantmentHelper.getItemEnchantmentLevel(luck, rod),
-                    EnchantmentHelper.getItemEnchantmentLevel(lure, rod),
-                    EnchantmentHelper.getItemEnchantmentLevel(unbreaking, rod),
-                    EnchantmentHelper.getItemEnchantmentLevel(mending, rod),
-                    customName != null ? customName.getString() : null);
+            ItemEnchantmentsComponent enchants = EnchantmentHelper.getEnchantments(rod);
+            int luck = 0, lure = 0, unbreaking = 0, mending = 0;
+            for (var entry : enchants.getEnchantmentEntries()) {
+                var key = entry.getKey();
+                if (key.matchesKey(Enchantments.LUCK_OF_THE_SEA)) luck = entry.getIntValue();
+                else if (key.matchesKey(Enchantments.LURE)) lure = entry.getIntValue();
+                else if (key.matchesKey(Enchantments.UNBREAKING)) unbreaking = entry.getIntValue();
+                else if (key.matchesKey(Enchantments.MENDING)) mending = entry.getIntValue();
+            }
+            String name = rod.contains(DataComponentTypes.CUSTOM_NAME)
+                    ? rod.getName().getString() : null;
+            return new RodEnchantments(luck, lure, unbreaking, mending, name);
         } catch (Exception e) {
             return new RodEnchantments();
         }
     }
 
-    private static String dimensionId(Level level) {
-        return level.dimension().identifier().getPath();
+    private static String dimensionId(World level) {
+        return level.getRegistryKey().getValue().getPath();
     }
 
-    private static String biomeId(Level level, BlockPos pos) {
-        return level.getBiome(pos).unwrapKey()
-                .map(key -> key.identifier().toString())
+    private static String biomeId(World level, BlockPos pos) {
+        return level.getBiome(pos).getKey()
+                .map(key -> key.getValue().toString())
                 .orElse("unknown");
     }
 }

@@ -6,17 +6,17 @@ import de.dennisthegamer.fishingstats.render.FishingStatsHud;
 import de.dennisthegamer.fishingstats.screen.FishingStatsTabScreen;
 import de.dennisthegamer.fishingstats.tracker.FishingTracker;
 import de.dennisthegamer.fishingstats.tracker.SessionManager;
-import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
-import net.minecraft.client.KeyMapping;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.PauseScreen;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.GameMenuScreen;
+import net.minecraft.client.option.KeyBinding;
+import net.minecraft.client.util.InputUtil;
+import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,12 +26,12 @@ public class FishingStatsClient implements ClientModInitializer {
     public static final String MOD_ID = "fishingstats";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
-    private static final KeyMapping.Category CATEGORY =
-            new KeyMapping.Category(Identifier.fromNamespaceAndPath(MOD_ID, MOD_ID));
+    private static final KeyBinding.Category CATEGORY =
+            KeyBinding.Category.create(Identifier.of(MOD_ID, MOD_ID));
 
-    private static KeyMapping statsKey;
-    private static KeyMapping compactKey;
-    private static KeyMapping sessionToggleKey;
+    private static KeyBinding statsKey;
+    private static KeyBinding compactKey;
+    private static KeyBinding sessionToggleKey;
 
     private boolean wasInWorld = false;
     /** True while the session pause was caused by the ESC menu (auto-resumes on close). */
@@ -45,21 +45,21 @@ public class FishingStatsClient implements ClientModInitializer {
         FishingStatsConfig.getInstance();
 
         // Register keybinds
-        statsKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+        statsKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.fishingstats.open",
-                InputConstants.Type.KEYSYM,
+                InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_O,
                 CATEGORY
         ));
-        compactKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+        compactKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.fishingstats.toggle_compact",
-                InputConstants.Type.KEYSYM,
+                InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_K,
                 CATEGORY
         ));
-        sessionToggleKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+        sessionToggleKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.fishingstats.session_toggle",
-                InputConstants.Type.KEYSYM,
+                InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_J,
                 CATEGORY
         ));
@@ -67,7 +67,7 @@ public class FishingStatsClient implements ClientModInitializer {
         // Register HUD renderer
         HudElementRegistry.attachElementAfter(
                 VanillaHudElements.BOSS_BAR,
-                Identifier.fromNamespaceAndPath(MOD_ID, "hud"),
+                Identifier.of(MOD_ID, "hud"),
                 FishingStatsHud::render
         );
 
@@ -75,25 +75,27 @@ public class FishingStatsClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(this::onTick);
     }
 
-    private void onTick(Minecraft client) {
-        boolean inWorld = client.player != null && client.level != null;
+    private void onTick(MinecraftClient client) {
+        boolean inWorld = client.player != null && client.world != null;
 
         if (inWorld && !wasInWorld) {
             FishingDataStore.getInstance().loadFromDisk();
             SessionManager.getInstance().pause();
-            String keyName = sessionToggleKey.getTranslatedKeyMessage().getString();
+            String keyName = sessionToggleKey.getBoundKeyLocalizedText().getString();
             FishingStatsConfig config = FishingStatsConfig.getInstance();
 
             if (config.persistSessions && SessionManager.getInstance().restoreSession()) {
-                client.player.sendSystemMessage(
-                        Component.translatable("fishingstats.session.restored", keyName)
-                                .withStyle(style -> style.withColor(0x55FF55))
+                client.player.sendMessage(
+                        Text.translatable("fishingstats.session.restored", keyName)
+                                .styled(style -> style.withColor(0x55FF55)),
+                        false
                 );
                 LOGGER.info("World joined - restored saved fishing session");
             } else {
-                client.player.sendSystemMessage(
-                        Component.translatable("fishingstats.session.press_to_start", keyName)
-                                .withStyle(style -> style.withColor(0xFFD700))
+                client.player.sendMessage(
+                        Text.translatable("fishingstats.session.press_to_start", keyName)
+                                .styled(style -> style.withColor(0xFFD700)),
+                        false
                 );
                 LOGGER.info("World joined - fishing tracker ready (paused)");
             }
@@ -115,12 +117,12 @@ public class FishingStatsClient implements ClientModInitializer {
         // Pause tracking while the ESC/pause menu is open and resume once it closes.
         // A session paused manually (keybind) is untouched: escPaused is only set when
         // the ESC menu pauses a running session, so only that pause is auto-resumed.
-        boolean pauseScreenOpen = client.screen instanceof PauseScreen;
+        boolean pauseScreenOpen = client.currentScreen instanceof GameMenuScreen;
         if (pauseScreenOpen && !escPaused && !SessionManager.getInstance().isPaused()) {
             SessionManager.getInstance().pause();
             escPaused = true;
             LOGGER.info("Fishing session paused (ESC menu)");
-        } else if (client.screen == null && escPaused) {
+        } else if (client.currentScreen == null && escPaused) {
             // Only back in-game: submenus opened from the pause menu keep the pause
             SessionManager.getInstance().resume();
             escPaused = false;
@@ -130,28 +132,30 @@ public class FishingStatsClient implements ClientModInitializer {
         FishingTracker.getInstance().tick(client);
         FishingStatsHud.tick(client);
 
-        while (statsKey.consumeClick()) {
+        while (statsKey.wasPressed()) {
             client.setScreen(FishingStatsTabScreen.openLastTab());
         }
 
-        while (compactKey.consumeClick()) {
+        while (compactKey.wasPressed()) {
             FishingStatsConfig config = FishingStatsConfig.getInstance();
             config.hudCompact = !config.hudCompact;
             config.save();
         }
 
-        while (sessionToggleKey.consumeClick()) {
+        while (sessionToggleKey.wasPressed()) {
             SessionManager session = SessionManager.getInstance();
             session.togglePause();
             if (session.isPaused()) {
-                client.player.sendSystemMessage(
-                        Component.translatable("fishingstats.session.paused")
-                                .withStyle(style -> style.withColor(0xFFAA00))
+                client.player.sendMessage(
+                        Text.translatable("fishingstats.session.paused")
+                                .styled(style -> style.withColor(0xFFAA00)),
+                        false
                 );
             } else {
-                client.player.sendSystemMessage(
-                        Component.translatable("fishingstats.session.started")
-                                .withStyle(style -> style.withColor(0x55FF55))
+                client.player.sendMessage(
+                        Text.translatable("fishingstats.session.started")
+                                .styled(style -> style.withColor(0x55FF55)),
+                        false
                 );
             }
         }

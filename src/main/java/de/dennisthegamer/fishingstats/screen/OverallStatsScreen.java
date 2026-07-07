@@ -4,13 +4,12 @@ import de.dennisthegamer.fishingstats.data.CatchCategory;
 import de.dennisthegamer.fishingstats.data.CatchRecord;
 import de.dennisthegamer.fishingstats.data.FishingDataStore;
 import de.dennisthegamer.fishingstats.data.FishingSession;
-import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.client.resources.language.I18n;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.ItemStack;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.client.font.TextRenderer;
+import net.minecraft.client.gui.Click;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.resource.language.I18n;
+import net.minecraft.item.ItemStack;
+import net.minecraft.text.Text;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -30,7 +29,7 @@ public class OverallStatsScreen extends FishingStatsTabScreen {
     private int contentHeight = 0;
 
     public OverallStatsScreen() {
-        super(Component.translatable("fishingstats.stats.title"), Tab.STATS);
+        super(Text.translatable("fishingstats.stats.title"), Tab.STATS);
     }
 
     private List<CatchRecord> allCatches() {
@@ -42,11 +41,11 @@ public class OverallStatsScreen extends FishingStatsTabScreen {
     }
 
     @Override
-    public void extractRenderState(@NotNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
+    public void render(DrawContext graphics, int mouseX, int mouseY, float delta) {
+        super.render(graphics, mouseX, mouseY, delta);
 
-        Font font = this.font;
-        int lineHeight = font.lineHeight + 4;
+        TextRenderer font = this.textRenderer;
+        int lineHeight = font.fontHeight + 4;
 
         renderHeader(graphics, "fishingstats.stats.title");
         renderSidebar(graphics, mouseX, mouseY);
@@ -55,8 +54,8 @@ public class OverallStatsScreen extends FishingStatsTabScreen {
         int contentX = contentX() + PADDING;
 
         if (catches.isEmpty()) {
-            String empty = I18n.get("fishingstats.stats.empty");
-            graphics.text(font, empty, contentX + (width - contentX - font.width(empty)) / 2,
+            String empty = I18n.translate("fishingstats.stats.empty");
+            graphics.drawText(font, empty, contentX + (width - contentX - font.getWidth(empty)) / 2,
                     height / 2, MUTED_COLOR, true);
             return;
         }
@@ -77,9 +76,9 @@ public class OverallStatsScreen extends FishingStatsTabScreen {
     }
 
     // === Section 1: catch rates grouped by enchantment combination ===
-    private int renderEnchantTable(GuiGraphicsExtractor graphics, Font font, List<CatchRecord> catches,
+    private int renderEnchantTable(DrawContext graphics, TextRenderer font, List<CatchRecord> catches,
                                    int x, int y, int lineHeight) {
-        graphics.text(font, I18n.get("fishingstats.stats.by_enchants"), x, y, HEADER_COLOR, true);
+        graphics.drawText(font, I18n.translate("fishingstats.stats.by_enchants"), x, y, HEADER_COLOR, true);
         y += lineHeight;
 
         Map<String, int[]> byCombo = new LinkedHashMap<>(); // label -> [fish, treasure, junk]
@@ -95,26 +94,26 @@ public class OverallStatsScreen extends FishingStatsTabScreen {
 
         int labelWidth = 0;
         for (String label : byCombo.keySet()) {
-            labelWidth = Math.max(labelWidth, font.width(label));
+            labelWidth = Math.max(labelWidth, font.getWidth(label));
         }
         int ratesX = x + Math.max(110, labelWidth + 24);
 
         for (Map.Entry<String, int[]> entry : byCombo.entrySet()) {
             int[] counts = entry.getValue();
             int total = counts[0] + counts[1] + counts[2];
-            graphics.text(font, entry.getKey(), x, y, TEXT_COLOR, true);
-            String rates = I18n.get("fishingstats.stats.rates",
+            graphics.drawText(font, entry.getKey(), x, y, TEXT_COLOR, true);
+            String rates = I18n.translate("fishingstats.stats.rates",
                     total, pct(counts[0], total), pct(counts[1], total), pct(counts[2], total));
-            graphics.text(font, rates, ratesX, y, MUTED_COLOR, true);
+            graphics.drawText(font, rates, ratesX, y, MUTED_COLOR, true);
             y += lineHeight;
         }
         return y;
     }
 
     // === Section 2: time-to-bite histogram ===
-    private int renderHistogram(GuiGraphicsExtractor graphics, Font font, List<CatchRecord> catches,
+    private int renderHistogram(DrawContext graphics, TextRenderer font, List<CatchRecord> catches,
                                 int x, int y, int lineHeight) {
-        graphics.text(font, I18n.get("fishingstats.stats.time_to_bite"), x, y, HEADER_COLOR, true);
+        graphics.drawText(font, I18n.translate("fishingstats.stats.time_to_bite"), x, y, HEADER_COLOR, true);
         y += lineHeight;
 
         int bucketCount = HISTOGRAM_BUCKETS_SECONDS.length + 1;
@@ -136,7 +135,7 @@ public class OverallStatsScreen extends FishingStatsTabScreen {
         }
 
         if (known == 0) {
-            graphics.text(font, I18n.get("fishingstats.stats.no_bite_data"), x, y, MUTED_COLOR, true);
+            graphics.drawText(font, I18n.translate("fishingstats.stats.no_bite_data"), x, y, MUTED_COLOR, true);
             return y + lineHeight;
         }
 
@@ -148,7 +147,7 @@ public class OverallStatsScreen extends FishingStatsTabScreen {
         int available = width - x - PADDING;
         int barWidth = Math.max(20, Math.min(48, available / bucketCount - 6));
         int barMaxHeight = 60;
-        int chartTop = y + font.lineHeight + 2;
+        int chartTop = y + font.fontHeight + 2;
         int chartBottom = chartTop + barMaxHeight;
         for (int i = 0; i < bucketCount; i++) {
             int barX = x + i * (barWidth + 6);
@@ -156,18 +155,18 @@ public class OverallStatsScreen extends FishingStatsTabScreen {
             graphics.fill(barX, chartBottom - barH, barX + barWidth, chartBottom, FISH_COLOR);
             if (buckets[i] > 0) {
                 String count = String.valueOf(buckets[i]);
-                graphics.text(font, count, barX + (barWidth - font.width(count)) / 2,
-                        chartBottom - barH - font.lineHeight - 1, TEXT_COLOR, true);
+                graphics.drawText(font, count, barX + (barWidth - font.getWidth(count)) / 2,
+                        chartBottom - barH - font.fontHeight - 1, TEXT_COLOR, true);
             }
             String label = i < HISTOGRAM_BUCKETS_SECONDS.length
                     ? "<" + HISTOGRAM_BUCKETS_SECONDS[i]
                     : HISTOGRAM_BUCKETS_SECONDS[HISTOGRAM_BUCKETS_SECONDS.length - 1] + "+";
-            graphics.text(font, label, barX + (barWidth - font.width(label)) / 2,
+            graphics.drawText(font, label, barX + (barWidth - font.getWidth(label)) / 2,
                     chartBottom + 2, MUTED_COLOR, true);
         }
         y = chartBottom + lineHeight + 2;
 
-        graphics.text(font, I18n.get("fishingstats.stats.avg_bite", StatsFormat.seconds(sum / known)),
+        graphics.drawText(font, I18n.translate("fishingstats.stats.avg_bite", StatsFormat.seconds(sum / known)),
                 x, y, MUTED_COLOR, true);
         y += lineHeight;
 
@@ -184,19 +183,19 @@ public class OverallStatsScreen extends FishingStatsTabScreen {
         for (int i = 0; i <= 3; i++) {
             if (lureCount[i] == 0) continue;
             if (lureLine.length() > 0) lureLine.append("   ");
-            lureLine.append(I18n.get("fishingstats.stats.lure_avg", i,
+            lureLine.append(I18n.translate("fishingstats.stats.lure_avg", i,
                     StatsFormat.seconds(lureSum[i] / lureCount[i])));
         }
         if (lureLine.length() > 0) {
-            graphics.text(font, lureLine.toString(), x, y, MUTED_COLOR, true);
+            graphics.drawText(font, lureLine.toString(), x, y, MUTED_COLOR, true);
             y += lineHeight;
         }
         return y;
     }
 
     // === Section 3: latest session vs. average ===
-    private int renderComparison(GuiGraphicsExtractor graphics, Font font, int x, int y, int lineHeight) {
-        graphics.text(font, I18n.get("fishingstats.stats.comparison"), x, y, HEADER_COLOR, true);
+    private int renderComparison(DrawContext graphics, TextRenderer font, int x, int y, int lineHeight) {
+        graphics.drawText(font, I18n.translate("fishingstats.stats.comparison"), x, y, HEADER_COLOR, true);
         y += lineHeight;
 
         List<FishingSession> sessions = FishingDataStore.getInstance().getSessionsNewestFirst();
@@ -215,20 +214,20 @@ public class OverallStatsScreen extends FishingStatsTabScreen {
         double latestHours = latest.durationMs() / 3_600_000.0;
         String latestRate = latestHours > 0.001 ? String.format("%.1f", latest.catches.size() / latestHours) : "-";
         String avgRate = totalHours > 0.001 ? String.format("%.1f", totalCatches / totalHours) : "-";
-        graphics.text(font, I18n.get("fishingstats.stats.catches_per_hour", latestRate, avgRate),
+        graphics.drawText(font, I18n.translate("fishingstats.stats.catches_per_hour", latestRate, avgRate),
                 x, y, TEXT_COLOR, true);
         y += lineHeight;
 
         int avgTreasurePct = totalCatches == 0 ? 0 : Math.round(100f * totalTreasure / totalCatches);
-        graphics.text(font, I18n.get("fishingstats.stats.treasure_share",
+        graphics.drawText(font, I18n.translate("fishingstats.stats.treasure_share",
                 latest.treasurePercent(), avgTreasurePct), x, y, TEXT_COLOR, true);
         return y + lineHeight;
     }
 
     // === Section 4: rarity log - rare finds are never aggregated ===
-    private int renderRareFinds(GuiGraphicsExtractor graphics, Font font, List<CatchRecord> catches,
+    private int renderRareFinds(DrawContext graphics, TextRenderer font, List<CatchRecord> catches,
                                 int x, int y, int lineHeight) {
-        graphics.text(font, I18n.get("fishingstats.stats.rare_finds"), x, y, HEADER_COLOR, true);
+        graphics.drawText(font, I18n.translate("fishingstats.stats.rare_finds"), x, y, HEADER_COLOR, true);
         y += lineHeight;
 
         boolean any = false;
@@ -237,14 +236,14 @@ public class OverallStatsScreen extends FishingStatsTabScreen {
             if (c.itemId == null || !CatchCategory.isRareFind(CatchCategory.itemById(c.itemId))) continue;
             any = true;
 
-            graphics.item(new ItemStack(CatchCategory.itemById(c.itemId)), x, y - 2);
-            String line = I18n.get("fishingstats.stats.rare_entry",
+            graphics.drawItem(new ItemStack(CatchCategory.itemById(c.itemId)), x, y - 2);
+            String line = I18n.translate("fishingstats.stats.rare_entry",
                     StatsFormat.prettyId(c.itemId), StatsFormat.dateTime(c.timestamp), c.posX, c.posZ);
-            graphics.text(font, line, x + 22, y + 2, TREASURE_COLOR, true);
+            graphics.drawText(font, line, x + 22, y + 2, TREASURE_COLOR, true);
             y += ROW_STEP;
         }
         if (!any) {
-            graphics.text(font, I18n.get("fishingstats.stats.no_rare_finds"), x, y, MUTED_COLOR, true);
+            graphics.drawText(font, I18n.translate("fishingstats.stats.no_rare_finds"), x, y, MUTED_COLOR, true);
             y += lineHeight;
         }
         return y;
@@ -257,10 +256,9 @@ public class OverallStatsScreen extends FishingStatsTabScreen {
     }
 
     @Override
-    public boolean mouseClicked(@NotNull MouseButtonEvent event, boolean consumed) {
-        if (consumed) return false;
-        if (handleSidebarClick(event)) return true;
-        return super.mouseClicked(event, consumed);
+    public boolean mouseClicked(Click click, boolean doubled) {
+        if (handleSidebarClick(click)) return true;
+        return super.mouseClicked(click, doubled);
     }
 
     @Override

@@ -3,12 +3,12 @@ package de.dennisthegamer.fishingstats.render;
 import de.dennisthegamer.fishingstats.config.FishingStatsConfig;
 import de.dennisthegamer.fishingstats.data.FishingSession;
 import de.dennisthegamer.fishingstats.tracker.SessionManager;
-import net.minecraft.client.DeltaTracker;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.resources.language.I18n;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.font.TextRenderer;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.render.RenderTickCounter;
+import net.minecraft.client.resource.language.I18n;
+import net.minecraft.item.ItemStack;
 import org.joml.Matrix3x2fStack;
 
 /**
@@ -35,11 +35,11 @@ public class FishingStatsHud {
     }
 
     /** Data extraction phase - runs on the client tick, never during rendering. */
-    public static void tick(Minecraft client) {
+    public static void tick(MinecraftClient client) {
         if (flashTicksRemaining > 0) flashTicksRemaining--;
 
         FishingSession session = SessionManager.getInstance().getActiveSession();
-        boolean fishingNow = client.player != null && client.player.fishing != null;
+        boolean fishingNow = client.player != null && client.player.fishHook != null;
         if (session == null) {
             state = new HudState(0, 0, 0, lastCatch, fishingNow);
         } else {
@@ -49,9 +49,9 @@ public class FishingStatsHud {
     }
 
     /** Render phase - draws only the snapshot extracted in {@link #tick}. */
-    public static void render(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
-        Minecraft client = Minecraft.getInstance();
-        if (client.player == null || client.options.hideGui) return;
+    public static void render(DrawContext graphics, RenderTickCounter tickCounter) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client.player == null || client.options.hudHidden) return;
 
         FishingStatsConfig config = FishingStatsConfig.getInstance();
         if (!config.hudEnabled) return;
@@ -61,28 +61,28 @@ public class FishingStatsHud {
         if (!config.hudVisibleAlways && !snapshot.fishingNow() && !sessionActive) return;
         if (snapshot.casts() == 0 && !snapshot.fishingNow()) return;
 
-        Font font = client.font;
+        TextRenderer font = client.textRenderer;
         float scale = config.hudScale;
-        Matrix3x2fStack pose = graphics.pose();
+        Matrix3x2fStack pose = graphics.getMatrices();
         pose.pushMatrix();
         pose.scale(scale, scale);
 
-        int scaledWidth = (int) (client.getWindow().getGuiScaledWidth() / scale);
-        int scaledHeight = (int) (client.getWindow().getGuiScaledHeight() / scale);
+        int scaledWidth = (int) (graphics.getScaledWindowWidth() / scale);
+        int scaledHeight = (int) (graphics.getScaledWindowHeight() / scale);
 
         boolean compact = config.hudCompact;
-        String title = I18n.get("fishingstats.hud.title");
-        String castsLine = I18n.get("fishingstats.hud.casts", snapshot.casts(), snapshot.catches());
-        String treasureLine = I18n.get("fishingstats.hud.treasure", snapshot.treasurePercent());
+        String title = I18n.translate("fishingstats.hud.title");
+        String castsLine = I18n.translate("fishingstats.hud.casts", snapshot.casts(), snapshot.catches());
+        String treasureLine = I18n.translate("fishingstats.hud.treasure", snapshot.treasurePercent());
 
-        int lineHeight = font.lineHeight + 2;
+        int lineHeight = font.fontHeight + 2;
         boolean hasCatchIcon = !compact && !snapshot.lastCatch().isEmpty();
         int textWidth = compact
-                ? font.width(castsLine)
-                : Math.max(font.width(title), Math.max(font.width(castsLine), font.width(treasureLine)));
+                ? font.getWidth(castsLine)
+                : Math.max(font.getWidth(title), Math.max(font.getWidth(castsLine), font.getWidth(treasureLine)));
         int hudWidth = Math.max(textWidth + PADDING * 2, hasCatchIcon ? 90 : 0);
         int hudHeight = compact
-                ? PADDING * 2 + font.lineHeight
+                ? PADDING * 2 + font.fontHeight
                 : PADDING * 2 + lineHeight * 3 + (hasCatchIcon ? 20 : 0);
 
         int x = switch (config.getHudPosition()) {
@@ -105,20 +105,20 @@ public class FishingStatsHud {
 
         int currentY = y + PADDING;
         if (compact) {
-            graphics.text(font, castsLine, x + PADDING, currentY, 0xFFFFFFFF, true);
+            graphics.drawText(font, castsLine, x + PADDING, currentY, 0xFFFFFFFF, true);
             pose.popMatrix();
             return;
         }
-        graphics.text(font, title, x + (hudWidth - font.width(title)) / 2, currentY, 0xFFFFD700, true);
+        graphics.drawText(font, title, x + (hudWidth - font.getWidth(title)) / 2, currentY, 0xFFFFD700, true);
         currentY += lineHeight;
-        graphics.text(font, castsLine, x + PADDING, currentY, 0xFFFFFFFF, true);
+        graphics.drawText(font, castsLine, x + PADDING, currentY, 0xFFFFFFFF, true);
         currentY += lineHeight;
-        graphics.text(font, treasureLine, x + PADDING, currentY, 0xFFFFFFFF, true);
+        graphics.drawText(font, treasureLine, x + PADDING, currentY, 0xFFFFFFFF, true);
         currentY += lineHeight;
 
         if (hasCatchIcon) {
-            graphics.item(snapshot.lastCatch(), x + PADDING, currentY);
-            graphics.text(font, I18n.get("fishingstats.hud.last_catch"),
+            graphics.drawItem(snapshot.lastCatch(), x + PADDING, currentY);
+            graphics.drawText(font, I18n.translate("fishingstats.hud.last_catch"),
                     x + PADDING + 20, currentY + 4, 0xFFAAAAAA, true);
         }
 

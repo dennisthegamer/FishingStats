@@ -1,11 +1,11 @@
 package de.dennisthegamer.fishingstats.screen;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.client.resources.language.I18n;
-import net.minecraft.network.chat.Component;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.Click;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.resource.language.I18n;
+import net.minecraft.text.Text;
 
 /**
  * Base for the FishingStats window: navigation sidebar on the left switching between
@@ -33,7 +33,7 @@ public abstract class FishingStatsTabScreen extends Screen {
 
     private final Tab tab;
 
-    protected FishingStatsTabScreen(Component title, Tab tab) {
+    protected FishingStatsTabScreen(Text title, Tab tab) {
         super(title);
         this.tab = tab;
         lastTab = tab;
@@ -51,14 +51,14 @@ public abstract class FishingStatsTabScreen extends Screen {
         return SIDEBAR_WIDTH + 1;
     }
 
-    protected void renderSidebar(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+    protected void renderSidebar(DrawContext graphics, int mouseX, int mouseY) {
         graphics.fill(0, HEADER_HEIGHT, SIDEBAR_WIDTH, height, 0x33000000);
         graphics.fill(SIDEBAR_WIDTH, HEADER_HEIGHT, SIDEBAR_WIDTH + 1, height, 0x44FFFFFF);
 
         int y = HEADER_HEIGHT + PADDING;
         for (Tab t : Tab.values()) {
             int entryTop = y - 2;
-            int entryBottom = y + font.lineHeight + 2;
+            int entryBottom = y + textRenderer.fontHeight + 2;
             boolean active = t == tab;
             boolean hovered = mouseX >= 0 && mouseX < SIDEBAR_WIDTH
                     && mouseY >= entryTop && mouseY < entryBottom;
@@ -67,43 +67,43 @@ public abstract class FishingStatsTabScreen extends Screen {
             } else if (hovered) {
                 graphics.fill(0, entryTop, SIDEBAR_WIDTH, entryBottom, 0x22FFFFFF);
             }
-            graphics.text(font, label(t), PADDING, y, active ? HEADER_COLOR : TEXT_COLOR, true);
-            y += font.lineHeight + ENTRY_STEP;
+            graphics.drawText(textRenderer, label(t), PADDING, y, active ? HEADER_COLOR : TEXT_COLOR, true);
+            y += textRenderer.fontHeight + ENTRY_STEP;
         }
     }
 
     /** Subclasses call this FIRST in mouseClicked so sidebar clicks never reach the content. */
-    protected boolean handleSidebarClick(MouseButtonEvent event) {
-        if (event.x() >= SIDEBAR_WIDTH || event.y() < HEADER_HEIGHT) return false;
-        if (event.button() != 0) return true;
+    protected boolean handleSidebarClick(Click click) {
+        if (click.x() >= SIDEBAR_WIDTH || click.y() < HEADER_HEIGHT) return false;
+        if (click.button() != 0) return true;
 
         int y = HEADER_HEIGHT + PADDING;
         for (Tab t : Tab.values()) {
-            if (event.y() >= y - 2 && event.y() < y + font.lineHeight + 2) {
+            if (click.y() >= y - 2 && click.y() < y + textRenderer.fontHeight + 2) {
                 if (t != tab) {
-                    Minecraft.getInstance().setScreen(createScreen(t));
+                    MinecraftClient.getInstance().setScreen(createScreen(t));
                 }
                 return true;
             }
-            y += font.lineHeight + ENTRY_STEP;
+            y += textRenderer.fontHeight + ENTRY_STEP;
         }
         return true;
     }
 
-    protected void renderHeader(GuiGraphicsExtractor graphics, String titleKey) {
+    protected void renderHeader(DrawContext graphics, String titleKey) {
         graphics.fill(0, 0, width, height, BG_COLOR);
         graphics.fill(0, 0, width, HEADER_HEIGHT, 0xDD000000);
-        String title = I18n.get(titleKey);
-        graphics.text(font, title, (width - font.width(title)) / 2, 10, HEADER_COLOR, true);
+        String title = I18n.translate(titleKey);
+        graphics.drawText(textRenderer, title, (width - textRenderer.getWidth(title)) / 2, 10, HEADER_COLOR, true);
     }
 
     private String label(Tab t) {
-        return I18n.get(t == Tab.STATS
+        return I18n.translate(t == Tab.STATS
                 ? "fishingstats.tab.stats" : "fishingstats.tab.sessions");
     }
 
     @Override
-    public boolean isPauseScreen() {
+    public boolean shouldPause() {
         return false;
     }
 }

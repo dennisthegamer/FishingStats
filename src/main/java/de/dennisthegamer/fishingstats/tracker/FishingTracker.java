@@ -224,10 +224,14 @@ public class FishingTracker {
             Holder<Enchantment> luck = registry.getOrThrow(Enchantments.LUCK_OF_THE_SEA);
             Holder<Enchantment> lure = registry.getOrThrow(Enchantments.LURE);
             Holder<Enchantment> unbreaking = registry.getOrThrow(Enchantments.UNBREAKING);
+            Holder<Enchantment> mending = registry.getOrThrow(Enchantments.MENDING);
+            var customName = rod.get(DataComponents.CUSTOM_NAME);
             return new RodEnchantments(
                     EnchantmentHelper.getItemEnchantmentLevel(luck, rod),
                     EnchantmentHelper.getItemEnchantmentLevel(lure, rod),
-                    EnchantmentHelper.getItemEnchantmentLevel(unbreaking, rod));
+                    EnchantmentHelper.getItemEnchantmentLevel(unbreaking, rod),
+                    EnchantmentHelper.getItemEnchantmentLevel(mending, rod),
+                    customName != null ? customName.getString() : null);
         } catch (Exception e) {
             return new RodEnchantments();
         }

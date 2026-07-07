@@ -5,9 +5,7 @@ import de.dennisthegamer.fishingstats.data.FishingSession;
 import de.dennisthegamer.fishingstats.tracker.SessionManager;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.input.KeyInput;
 import net.minecraft.client.resource.language.I18n;
 import net.minecraft.text.Text;
 import org.lwjgl.glfw.GLFW;
@@ -109,33 +107,33 @@ public class SessionListScreen extends FishingStatsTabScreen {
     }
 
     @Override
-    public boolean mouseClicked(Click click, boolean doubled) {
-        if (handleSidebarClick(click)) return true;
-        if (click.button() != 0) return super.mouseClicked(click, doubled);
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (handleSidebarClick(mouseX, mouseY, button)) return true;
+        if (button != 0) return super.mouseClicked(mouseX, mouseY, button);
 
         int listY = listStartY();
-        if (click.y() >= listY && click.x() >= contentX()) {
-            int index = (int) ((click.y() - listY) / entryHeight()) + scrollOffset;
+        if (mouseY >= listY && mouseX >= contentX()) {
+            int index = (int) ((mouseY - listY) / entryHeight()) + scrollOffset;
             List<FishingSession> sessions = FishingDataStore.getInstance().getSessionsNewestFirst();
             if (index >= 0 && index < sessions.size()) {
                 MinecraftClient.getInstance().setScreen(new SessionDetailScreen(sessions.get(index).id, this));
                 return true;
             }
         }
-        return super.mouseClicked(click, doubled);
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
-    public boolean keyPressed(KeyInput input) {
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         // R = discard the active session and pause tracking
-        if (input.key() == GLFW.GLFW_KEY_R) {
+        if (keyCode == GLFW.GLFW_KEY_R) {
             SessionManager.getInstance().resetSession();
             scrollOffset = 0;
             statusMessage = I18n.translate("fishingstats.sessions.reset_confirm");
             statusMessageTicks = 60;
             return true;
         }
-        return super.keyPressed(input);
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override

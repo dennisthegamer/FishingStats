@@ -87,7 +87,7 @@ public class FishingTracker {
         }
 
         if (hook != null) {
-            lastHookPos = hook.getEntityPos();
+            lastHookPos = hook.getPos();
             boolean biting = ((FishingHookAccessor) hook).fishingStats$isBiting();
             if (biting && !wasBiting) {
                 biteTimeMs = now;
@@ -111,7 +111,7 @@ public class FishingTracker {
         castTimeMs = now;
         biteTimeMs = -1;
         biteOpenWater = false;
-        lastHookPos = hook.getEntityPos();
+        lastHookPos = hook.getPos();
         rodSnapshot = readRodEnchantments(player);
         SessionManager.getInstance().onCast(now, dimensionId(level));
     }

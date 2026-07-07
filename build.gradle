@@ -22,6 +22,12 @@ repositories {
 		name = "isXander"
 		url = "https://maven.isxander.dev/releases"
 	}
+
+	// Quilt Maven for quilt-parsers (ModMenu dev runtime)
+	maven {
+		name = "QuiltMC"
+		url = "https://maven.quiltmc.org/repository/release"
+	}
 }
 
 dependencies {
@@ -33,8 +39,14 @@ dependencies {
 	// Fabric API
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-	// ModMenu for mod listing and configuration
-	modImplementation "maven.modrinth:modmenu:${project.modmenu_version}"
+	// ModMenu for mod listing and configuration - compile/dev only on this branch,
+	// users install the ModMenu build matching their Minecraft version
+	modCompileOnly "maven.modrinth:modmenu:${project.modmenu_version}"
+	modLocalRuntime "maven.modrinth:modmenu:${project.modmenu_version}"
+	// ModMenu 15.x expects quilt-parsers from a newer loader; the Modrinth maven has no
+	// transitive deps, so provide them in the dev runtime explicitly (not shipped in the jar)
+	localRuntime "org.quiltmc.parsers:json:0.3.1"
+	localRuntime "org.quiltmc.parsers:gson:0.3.1"
 
 	// YACL for configuration screens
 	modImplementation "maven.modrinth:yacl:${project.yacl_version}"

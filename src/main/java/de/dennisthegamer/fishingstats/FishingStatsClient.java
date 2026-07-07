@@ -9,14 +9,12 @@ import de.dennisthegamer.fishingstats.tracker.SessionManager;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
-import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.GameMenuScreen;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,8 +24,8 @@ public class FishingStatsClient implements ClientModInitializer {
     public static final String MOD_ID = "fishingstats";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
-    private static final KeyBinding.Category CATEGORY =
-            KeyBinding.Category.create(Identifier.of(MOD_ID, MOD_ID));
+    /** Same translation key that Identifier-based categories generate on 1.21.9+. */
+    private static final String CATEGORY = "key.category.fishingstats.fishingstats";
 
     private static KeyBinding statsKey;
     private static KeyBinding compactKey;
@@ -64,12 +62,9 @@ public class FishingStatsClient implements ClientModInitializer {
                 CATEGORY
         ));
 
-        // Register HUD renderer
-        HudElementRegistry.attachElementAfter(
-                VanillaHudElements.BOSS_BAR,
-                Identifier.of(MOD_ID, "hud"),
-                FishingStatsHud::render
-        );
+        // Register HUD renderer (HudRenderCallback exists on all of 1.21-1.21.8;
+        // HudElementRegistry only from 1.21.6)
+        HudRenderCallback.EVENT.register(FishingStatsHud::render);
 
         // Register tick handler
         ClientTickEvents.END_CLIENT_TICK.register(this::onTick);

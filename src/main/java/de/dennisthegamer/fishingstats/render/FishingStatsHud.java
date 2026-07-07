@@ -9,7 +9,6 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.client.resource.language.I18n;
 import net.minecraft.item.ItemStack;
-import org.joml.Matrix3x2fStack;
 
 /**
  * Two-phase HUD (plan section 7): {@link #tick} extracts the session state on the game
@@ -63,9 +62,11 @@ public class FishingStatsHud {
 
         TextRenderer font = client.textRenderer;
         float scale = config.hudScale;
-        Matrix3x2fStack pose = graphics.getMatrices();
-        pose.pushMatrix();
-        pose.scale(scale, scale);
+        Object pose = null;
+        if (scale != 1.0f) {
+            pose = HudPose.push(graphics, scale);
+            if (pose == null) scale = 1.0f;
+        }
 
         int scaledWidth = (int) (graphics.getScaledWindowWidth() / scale);
         int scaledHeight = (int) (graphics.getScaledWindowHeight() / scale);
@@ -106,7 +107,7 @@ public class FishingStatsHud {
         int currentY = y + PADDING;
         if (compact) {
             graphics.drawText(font, castsLine, x + PADDING, currentY, 0xFFFFFFFF, true);
-            pose.popMatrix();
+            HudPose.pop(pose);
             return;
         }
         graphics.drawText(font, title, x + (hudWidth - font.getWidth(title)) / 2, currentY, 0xFFFFD700, true);
@@ -122,6 +123,6 @@ public class FishingStatsHud {
                     x + PADDING + 20, currentY + 4, 0xFFAAAAAA, true);
         }
 
-        pose.popMatrix();
+        HudPose.pop(pose);
     }
 }

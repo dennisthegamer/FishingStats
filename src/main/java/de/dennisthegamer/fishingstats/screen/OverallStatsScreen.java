@@ -5,7 +5,6 @@ import de.dennisthegamer.fishingstats.data.CatchRecord;
 import de.dennisthegamer.fishingstats.data.FishingDataStore;
 import de.dennisthegamer.fishingstats.data.FishingSession;
 import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.resource.language.I18n;
 import net.minecraft.item.ItemStack;
@@ -256,9 +255,9 @@ public class OverallStatsScreen extends FishingStatsTabScreen {
     }
 
     @Override
-    public boolean mouseClicked(Click click, boolean doubled) {
-        if (handleSidebarClick(click)) return true;
-        return super.mouseClicked(click, doubled);
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (handleSidebarClick(mouseX, mouseY, button)) return true;
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override

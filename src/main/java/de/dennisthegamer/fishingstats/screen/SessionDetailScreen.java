@@ -8,7 +8,6 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.input.KeyInput;
 import net.minecraft.client.resource.language.I18n;
 import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
@@ -18,7 +17,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Detail view of one session (plan section 3.2): header facts, fish/treasure/junk bar
@@ -100,7 +98,7 @@ public class SessionDetailScreen extends Screen {
                 graphics.fill(0, y, width / 2, y + ROW_HEIGHT, 0x22FFFFFF);
                 if (row.tooltipCategory != null) {
                     graphics.drawTooltip(font,
-                            breakdownTooltip(session, row.tooltipCategory), Optional.empty(), mouseX, mouseY);
+                            breakdownTooltip(session, row.tooltipCategory), mouseX, mouseY);
                 }
             }
 
@@ -204,12 +202,12 @@ public class SessionDetailScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(KeyInput input) {
-        if (input.key() == GLFW.GLFW_KEY_ESCAPE) {
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
             MinecraftClient.getInstance().setScreen(parent);
             return true;
         }
-        return super.keyPressed(input);
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override

@@ -1,7 +1,6 @@
 package de.dennisthegamer.fishingstats.screen;
 
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.resource.language.I18n;
@@ -73,13 +72,13 @@ public abstract class FishingStatsTabScreen extends Screen {
     }
 
     /** Subclasses call this FIRST in mouseClicked so sidebar clicks never reach the content. */
-    protected boolean handleSidebarClick(Click click) {
-        if (click.x() >= SIDEBAR_WIDTH || click.y() < HEADER_HEIGHT) return false;
-        if (click.button() != 0) return true;
+    protected boolean handleSidebarClick(double mouseX, double mouseY, int button) {
+        if (mouseX >= SIDEBAR_WIDTH || mouseY < HEADER_HEIGHT) return false;
+        if (button != 0) return true;
 
         int y = HEADER_HEIGHT + PADDING;
         for (Tab t : Tab.values()) {
-            if (click.y() >= y - 2 && click.y() < y + textRenderer.fontHeight + 2) {
+            if (mouseY >= y - 2 && mouseY < y + textRenderer.fontHeight + 2) {
                 if (t != tab) {
                     MinecraftClient.getInstance().setScreen(createScreen(t));
                 }

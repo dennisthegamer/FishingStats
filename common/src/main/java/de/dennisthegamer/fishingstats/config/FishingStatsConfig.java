@@ -1,8 +1,8 @@
 package de.dennisthegamer.fishingstats.config;
 
+import de.dennisthegamer.fishingstats.platform.Platforms;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.File;
 import java.io.FileReader;
@@ -13,7 +13,7 @@ public class FishingStatsConfig {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final File CONFIG_FILE = new File(
-            FabricLoader.getInstance().getConfigDir().toFile(),
+            Platforms.get().getConfigDir().toFile(),
             "fishingstats.json"
     );
 

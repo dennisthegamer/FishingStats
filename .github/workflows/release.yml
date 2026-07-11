@@ -55,7 +55,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-artifacts-${{ steps.version.outputs.mod_version }}
-          path: build/libs/
+          path: |
+            fabric/build/libs/
+            neoforge/build/libs/
           retention-days: 7
 
   release:
@@ -74,7 +76,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-artifacts-${{ needs.build.outputs.mod_version }}
-          path: build/libs/
+          path: artifacts/
 
       - name: Extract changelog for version
         id: changelog
@@ -121,14 +123,14 @@ jobs:
           ## Compatibility
 
           - **Minecraft:** ${{ needs.build.outputs.minecraft_version }}
-          - **Fabric Loader:** ${{ needs.build.outputs.loader_version }}+
-          - **Fabric API:** ${{ needs.build.outputs.fabric_api_version }}
+          - **Loaders:** Fabric (Loader ${{ needs.build.outputs.loader_version }}+, Fabric API ${{ needs.build.outputs.fabric_api_version }}) and NeoForge
           - **Java:** 25+
 
           ## Build Artifacts
 
-          - `fishingstats-mc${{ needs.build.outputs.minecraft_version }}-${{ needs.build.outputs.mod_version }}.jar` - Main mod file (download this)
-          - `fishingstats-mc${{ needs.build.outputs.minecraft_version }}-${{ needs.build.outputs.mod_version }}-sources.jar` - Source code
+          - `fishingstats-fabric-mc${{ needs.build.outputs.minecraft_version }}-${{ needs.build.outputs.mod_version }}.jar` - Fabric mod file
+          - `fishingstats-neoforge-mc${{ needs.build.outputs.minecraft_version }}-${{ needs.build.outputs.mod_version }}.jar` - NeoForge mod file
+          - `*-sources.jar` - Source code
 
           ## Recent Commits
 
@@ -136,7 +138,7 @@ jobs:
 
           ---
 
-          **Installation:** Download the main JAR file and place it in your mods folder along with Fabric API, ModMenu, and YACL.
+          **Installation:** Download the JAR matching your mod loader and place it in your mods folder. On Fabric you also need Fabric API (plus ModMenu and YACL for the config screen); on NeoForge only YACL is needed for the config screen.
           RELEASE_BODY
 
       - name: Create Release
@@ -149,4 +151,5 @@ jobs:
           prerelease: false
           body_path: release_body.md
           files: |
-            build/libs/fishingstats-*.jar
+            artifacts/fabric/build/libs/fishingstats-*.jar
+            artifacts/neoforge/build/libs/fishingstats-*.jar

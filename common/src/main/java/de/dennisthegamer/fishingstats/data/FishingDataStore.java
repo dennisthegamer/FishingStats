@@ -2,10 +2,10 @@ package de.dennisthegamer.fishingstats.data;
 
 import de.dennisthegamer.fishingstats.FishingStatsClient;
 import de.dennisthegamer.fishingstats.config.FishingStatsConfig;
+import de.dennisthegamer.fishingstats.platform.Platforms;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -21,7 +21,7 @@ public class FishingDataStore {
     private static final FishingDataStore INSTANCE = new FishingDataStore();
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Path STORE_FILE = FabricLoader.getInstance().getConfigDir()
+    private static final Path STORE_FILE = Platforms.get().getConfigDir()
             .resolve("fishingstats_sessions.json");
 
     private final List<FishingSession> sessions = new ArrayList<>();

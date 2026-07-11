@@ -2,17 +2,12 @@ package de.dennisthegamer.fishingstats;
 
 import de.dennisthegamer.fishingstats.config.FishingStatsConfig;
 import de.dennisthegamer.fishingstats.data.FishingDataStore;
+import de.dennisthegamer.fishingstats.platform.Platforms;
 import de.dennisthegamer.fishingstats.render.FishingStatsHud;
 import de.dennisthegamer.fishingstats.screen.FishingStatsTabScreen;
 import de.dennisthegamer.fishingstats.tracker.FishingTracker;
 import de.dennisthegamer.fishingstats.tracker.SessionManager;
 import com.mojang.blaze3d.platform.InputConstants;
-import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
-import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
-import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.PauseScreen;
@@ -25,64 +20,53 @@ import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class FishingStatsClient implements ClientModInitializer {
+/**
+ * Shared (loader-free) client logic. The loader modules register the keybinds, the
+ * HUD layer and the end-of-tick hook and delegate to {@link #init()} / {@link #onTick}.
+ */
+public final class FishingStatsClient {
 
     public static final String MOD_ID = "fishingstats";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     /** Running Minecraft version; persisted sessions are only restored on a match. */
-    public static final String GAME_VERSION = FabricLoader.getInstance()
-            .getModContainer("minecraft")
-            .map(mod -> mod.getMetadata().getVersion().getFriendlyString())
-            .orElse("unknown");
+    public static final String GAME_VERSION = Platforms.get().getMinecraftVersion();
 
-    private static final KeyMapping.Category CATEGORY =
+    public static final KeyMapping.Category CATEGORY =
             new KeyMapping.Category(Identifier.fromNamespaceAndPath(MOD_ID, MOD_ID));
 
-    private static KeyMapping statsKey;
-    private static KeyMapping compactKey;
-    private static KeyMapping sessionToggleKey;
+    public static final KeyMapping STATS_KEY = new KeyMapping(
+            "key.fishingstats.open",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_O,
+            CATEGORY
+    );
+    public static final KeyMapping COMPACT_KEY = new KeyMapping(
+            "key.fishingstats.toggle_compact",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_K,
+            CATEGORY
+    );
+    public static final KeyMapping SESSION_TOGGLE_KEY = new KeyMapping(
+            "key.fishingstats.session_toggle",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_J,
+            CATEGORY
+    );
 
-    private boolean wasInWorld = false;
+    private static boolean wasInWorld = false;
     /** True while the session pause was caused by the ESC menu (auto-resumes on close). */
-    private boolean escPaused = false;
+    private static boolean escPaused = false;
 
-    @Override
-    public void onInitializeClient() {
+    private FishingStatsClient() {
+    }
+
+    /** Called once from each loader's client entrypoint. */
+    public static void init() {
         LOGGER.info("FishingStats loaded!");
 
         // Load config
         FishingStatsConfig.getInstance();
-
-        // Register keybinds
-        statsKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-                "key.fishingstats.open",
-                InputConstants.Type.KEYSYM,
-                GLFW.GLFW_KEY_O,
-                CATEGORY
-        ));
-        compactKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-                "key.fishingstats.toggle_compact",
-                InputConstants.Type.KEYSYM,
-                GLFW.GLFW_KEY_K,
-                CATEGORY
-        ));
-        sessionToggleKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-                "key.fishingstats.session_toggle",
-                InputConstants.Type.KEYSYM,
-                GLFW.GLFW_KEY_J,
-                CATEGORY
-        ));
-
-        // Register HUD renderer
-        HudElementRegistry.attachElementAfter(
-                VanillaHudElements.BOSS_BAR,
-                Identifier.fromNamespaceAndPath(MOD_ID, "hud"),
-                FishingStatsHud::render
-        );
-
-        // Register tick handler
-        ClientTickEvents.END_CLIENT_TICK.register(this::onTick);
     }
 
     /**
@@ -102,14 +86,15 @@ public class FishingStatsClient implements ClientModInitializer {
         return "";
     }
 
-    private void onTick(Minecraft client) {
+    /** End-of-client-tick hook, wired up by the loader modules. */
+    public static void onTick(Minecraft client) {
         boolean inWorld = client.player != null && client.level != null;
 
         if (inWorld && !wasInWorld) {
             FishingDataStore.getInstance().loadFromDisk();
             SessionManager.getInstance().setWorld(worldKey(client));
             SessionManager.getInstance().pause();
-            String keyName = sessionToggleKey.getTranslatedKeyMessage().getString();
+            String keyName = SESSION_TOGGLE_KEY.getTranslatedKeyMessage().getString();
             FishingStatsConfig config = FishingStatsConfig.getInstance();
 
             if (config.persistSessions && SessionManager.getInstance().restoreSession()) {
@@ -158,17 +143,17 @@ public class FishingStatsClient implements ClientModInitializer {
         FishingTracker.getInstance().tick(client);
         FishingStatsHud.tick(client);
 
-        while (statsKey.consumeClick()) {
+        while (STATS_KEY.consumeClick()) {
             client.setScreen(FishingStatsTabScreen.openLastTab());
         }
 
-        while (compactKey.consumeClick()) {
+        while (COMPACT_KEY.consumeClick()) {
             FishingStatsConfig config = FishingStatsConfig.getInstance();
             config.hudCompact = !config.hudCompact;
             config.save();
         }
 
-        while (sessionToggleKey.consumeClick()) {
+        while (SESSION_TOGGLE_KEY.consumeClick()) {
             SessionManager session = SessionManager.getInstance();
             session.togglePause();
             if (session.isPaused()) {

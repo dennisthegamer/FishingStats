@@ -1,5 +1,6 @@
-package de.dennisthegamer.fishingstats.config;
+package de.dennisthegamer.fishingstats.fabric;
 
+import de.dennisthegamer.fishingstats.config.FishingStatsConfigScreen;
 import com.terraformersmc.modmenu.api.ConfigScreenFactory;
 import com.terraformersmc.modmenu.api.ModMenuApi;
 

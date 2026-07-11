@@ -1,0 +1,36 @@
+modLoader = "javafml"
+loaderVersion = "[1,)"
+license = "MIT"
+
+[[mods]]
+modId = "fishingstats"
+version = "${version}"
+displayName = "FishingStats"
+description = '''Tracks fishing sessions: casts, catches by category, time-to-bite, treasure rates and rare finds - with session history, statistics and a live HUD.'''
+authors = "Dennis_thegamer"
+logoFile = "assets/fishingstats/icon.png"
+
+[[mixins]]
+config = "fishingstats.mixins.json"
+
+[[dependencies.fishingstats]]
+modId = "neoforge"
+type = "required"
+versionRange = "[26.1,)"
+ordering = "NONE"
+side = "CLIENT"
+
+[[dependencies.fishingstats]]
+modId = "minecraft"
+type = "required"
+versionRange = "[26.1,26.2)"
+ordering = "NONE"
+side = "CLIENT"
+
+# YACL is only needed to open the config screen (same as "suggests" on Fabric)
+[[dependencies.fishingstats]]
+modId = "yet_another_config_lib_v3"
+type = "optional"
+versionRange = "[3.9,)"
+ordering = "NONE"
+side = "CLIENT"

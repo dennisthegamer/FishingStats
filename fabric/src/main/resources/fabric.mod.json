@@ -12,10 +12,10 @@
 	"environment": "client",
 	"entrypoints": {
 		"client": [
-			"de.dennisthegamer.fishingstats.FishingStatsClient"
+			"de.dennisthegamer.fishingstats.fabric.FishingStatsFabric"
 		],
 		"modmenu": [
-			"de.dennisthegamer.fishingstats.config.ModMenuIntegration"
+			"de.dennisthegamer.fishingstats.fabric.ModMenuIntegration"
 		]
 	},
 	"mixins": [

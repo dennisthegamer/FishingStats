@@ -16,14 +16,14 @@ config = "fishingstats.mixins.json"
 [[dependencies.fishingstats]]
 modId = "neoforge"
 type = "required"
-versionRange = "[26.1,)"
+versionRange = "[26.1.2,)"
 ordering = "NONE"
 side = "CLIENT"
 
 [[dependencies.fishingstats]]
 modId = "minecraft"
 type = "required"
-versionRange = "[26.1,26.2)"
+versionRange = "[26.1.2,26.2)"
 ordering = "NONE"
 side = "CLIENT"
 

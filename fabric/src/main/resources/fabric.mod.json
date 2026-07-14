@@ -1,0 +1,38 @@
+{
+	"schemaVersion": 1,
+	"id": "fishingstats",
+	"version": "${version}",
+	"name": "FishingStats",
+	"description": "Tracks fishing sessions: casts, catches by category, time-to-bite, treasure rates and rare finds - with session history, statistics and a live HUD.",
+	"authors": [
+		"Dennis_thegamer"
+	],
+	"contact": {
+		"homepage": "https://modrinth.com/mod/fishingstats",
+		"issues": "https://github.com/DennisTheGamer/FishingStats/issues"
+	},
+	"license": "MIT",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"de.dennisthegamer.fishingstats.fabric.FishingStatsFabric"
+		],
+		"modmenu": [
+			"de.dennisthegamer.fishingstats.fabric.ModMenuIntegration"
+		]
+	},
+	"mixins": [
+		"fishingstats.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.18.3",
+		"fabric-api": "*",
+		"architectury": ">=17.0.8",
+		"minecraft": ">=1.21.6 <=1.21.8",
+		"java": ">=21"
+	},
+	"suggests": {
+		"modmenu": "*",
+		"yet_another_config_lib_v3": "*"
+	}
+}

@@ -1,0 +1,12 @@
+{
+	"required": true,
+	"package": "de.dennisthegamer.fishingstats.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"FishingHookAccessor",
+		"ItemEntityAccessor"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

@@ -1,93 +1,37 @@
 plugins {
-	id 'net.fabricmc.fabric-loom-remap' version "${loom_version}"
-	id 'maven-publish'
+	id 'architectury-plugin' version "${arch_plugin_version}"
+	id 'dev.architectury.loom' version "${arch_loom_version}" apply false
+	id 'com.gradleup.shadow' version "${shadow_version}" apply false
 }
 
-version = "${project.mod_version}+mc${project.minecraft_range}"
-group = project.maven_group
+architectury { minecraft = project.minecraft_version }
 
-base {
-	archivesName = "${project.archives_base_name}-fabric"
-}
-
-repositories {
-	// Modrinth Maven for ModMenu and YACL
-	maven {
-		name = "Modrinth"
-		url = "https://api.modrinth.com/maven"
-	}
-
-	// isXander's Maven for YACL
-	maven {
-		name = "isXander"
-		url = "https://maven.isxander.dev/releases"
-	}
-
-	// Quilt Maven for quilt-parsers (ModMenu dev runtime)
-	maven {
-		name = "QuiltMC"
-		url = "https://maven.quiltmc.org/repository/release"
+subprojects {
+	apply plugin: 'dev.architectury.loom'
+	loom { silentMojangMappingsLicense() }
+	dependencies {
+		minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
+		mappings loom.officialMojangMappings()
 	}
 }
 
-dependencies {
-	// To change the versions see the gradle.properties file
-	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-
-	// Fabric API
-	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-
-	// ModMenu for mod listing and configuration - compile/dev only on this branch,
-	// users install the ModMenu build matching their Minecraft version
-	modCompileOnly "maven.modrinth:modmenu:${project.modmenu_version}"
-	modLocalRuntime "maven.modrinth:modmenu:${project.modmenu_version}"
-	// ModMenu 15.x expects quilt-parsers from a newer loader; the Modrinth maven has no
-	// transitive deps, so provide them in the dev runtime explicitly (not shipped in the jar)
-	localRuntime "org.quiltmc.parsers:json:0.3.1"
-	localRuntime "org.quiltmc.parsers:gson:0.3.1"
-
-	// YACL for configuration screens
-	modImplementation "maven.modrinth:yacl:${project.yacl_version}"
-}
-
-processResources {
-	inputs.property "version", project.version
-
-	filesMatching("fabric.mod.json") {
-		expand "version": inputs.properties.version
-	}
-}
-
-tasks.withType(JavaCompile).configureEach {
-	it.options.release = 21
-}
-
-java {
-	withSourcesJar()
-
-	sourceCompatibility = JavaVersion.VERSION_21
-	targetCompatibility = JavaVersion.VERSION_21
-}
-
-jar {
-	inputs.property "archivesName", project.base.archivesName
-
-	from("LICENSE") {
-		rename { "${it}_${inputs.properties.archivesName}" }
-	}
-}
-
-// configure the maven publication
-publishing {
-	publications {
-		create("mavenJava", MavenPublication) {
-			artifactId = project.archives_base_name
-			from components.java
+allprojects {
+	apply plugin: 'java'
+	apply plugin: 'architectury-plugin'
+	version = "${rootProject.mod_version}+mc${rootProject.minecraft_range}"
+	group = rootProject.maven_group
+	base { archivesName = "${rootProject.archives_base_name}-${project.name}" }
+	repositories {
+		maven { name = 'Architectury'; url = 'https://maven.architectury.dev/' }
+		maven { name = 'NeoForged'; url = 'https://maven.neoforged.net/releases/' }
+		maven { name = 'Xander'; url = 'https://maven.isxander.dev/releases' }
+			maven { name = 'KotlinForForge'; url = 'https://thedarkcolour.github.io/KotlinForForge/' }
+		maven {
+			name = 'Modrinth'
+			url = 'https://api.modrinth.com/maven'
+			content { includeGroup 'maven.modrinth' }
 		}
 	}
-
-	repositories {
-	}
+	tasks.withType(JavaCompile).configureEach { it.options.release = 21 }
+	java { withSourcesJar() }
 }

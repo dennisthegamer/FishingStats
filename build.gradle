@@ -1,81 +1,36 @@
 plugins {
-	id 'net.fabricmc.fabric-loom-remap' version "${loom_version}"
-	id 'maven-publish'
+	id 'architectury-plugin' version "${arch_plugin_version}"
+	id 'dev.architectury.loom-remap' version "${arch_loom_version}" apply false
+	id 'com.gradleup.shadow' version "${shadow_version}" apply false
 }
 
-version = "${project.mod_version}+mc${project.minecraft_range}"
-group = project.maven_group
+architectury { minecraft = project.minecraft_version }
 
-base {
-	archivesName = "${project.archives_base_name}-fabric"
-}
-
-repositories {
-	// Modrinth Maven for ModMenu and YACL
-	maven {
-		name = "Modrinth"
-		url = "https://api.modrinth.com/maven"
-	}
-
-	// isXander's Maven for YACL
-	maven {
-		name = "isXander"
-		url = "https://maven.isxander.dev/releases"
+subprojects {
+	apply plugin: 'dev.architectury.loom-remap'
+	loom { silentMojangMappingsLicense() }
+	dependencies {
+		minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
+		mappings loom.officialMojangMappings()
 	}
 }
 
-dependencies {
-	// To change the versions see the gradle.properties file
-	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-
-	// Fabric API
-	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-
-	// ModMenu for mod listing and configuration
-	modImplementation "maven.modrinth:modmenu:${project.modmenu_version}"
-
-	// YACL for configuration screens
-	modImplementation "maven.modrinth:yacl:${project.yacl_version}"
-}
-
-processResources {
-	inputs.property "version", project.version
-
-	filesMatching("fabric.mod.json") {
-		expand "version": inputs.properties.version
-	}
-}
-
-tasks.withType(JavaCompile).configureEach {
-	it.options.release = 21
-}
-
-java {
-	withSourcesJar()
-
-	sourceCompatibility = JavaVersion.VERSION_21
-	targetCompatibility = JavaVersion.VERSION_21
-}
-
-jar {
-	inputs.property "archivesName", project.base.archivesName
-
-	from("LICENSE") {
-		rename { "${it}_${inputs.properties.archivesName}" }
-	}
-}
-
-// configure the maven publication
-publishing {
-	publications {
-		create("mavenJava", MavenPublication) {
-			artifactId = project.archives_base_name
-			from components.java
+allprojects {
+	apply plugin: 'java'
+	apply plugin: 'architectury-plugin'
+	version = "${rootProject.mod_version}+mc${rootProject.minecraft_range}"
+	group = rootProject.maven_group
+	base { archivesName = "${rootProject.archives_base_name}-${project.name}" }
+	repositories {
+		maven { name = 'Architectury'; url = 'https://maven.architectury.dev/' }
+		maven { name = 'NeoForged'; url = 'https://maven.neoforged.net/releases/' }
+		maven { name = 'Xander'; url = 'https://maven.isxander.dev/releases' }
+		maven {
+			name = 'Modrinth'
+			url = 'https://api.modrinth.com/maven'
+			content { includeGroup 'maven.modrinth' }
 		}
 	}
-
-	repositories {
-	}
+	tasks.withType(JavaCompile).configureEach { it.options.release = 21 }
+	java { withSourcesJar() }
 }

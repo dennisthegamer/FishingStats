@@ -60,7 +60,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-artifacts-${{ steps.version.outputs.mod_version }}
-          path: build/libs/
+          path: |
+            fabric/build/libs/
+            neoforge/build/libs/
           retention-days: 7
 
   release:
@@ -79,7 +81,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-artifacts-${{ needs.build.outputs.mod_version }}
-          path: build/libs/
+          path: artifacts/
 
       - name: Extract changelog for version
         id: changelog
@@ -154,4 +156,5 @@ jobs:
           prerelease: false
           body_path: release_body.md
           files: |
-            build/libs/fishingstats-*.jar
+            artifacts/fabric/build/libs/fishingstats-*.jar
+            artifacts/neoforge/build/libs/fishingstats-*.jar

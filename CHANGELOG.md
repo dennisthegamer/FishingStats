@@ -5,6 +5,15 @@ All notable changes to FishingStats will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-07-14
+
+### Changed
+- Unified the mod version to 1.1.0 across all loaders and Minecraft versions so
+  every build carries one release number
+- Standardized jar naming to `fishingstats-<loader>-<version>+mc<range>`
+  (e.g. `fishingstats-fabric-1.1.0+mc1.21-1.21.5.jar`)
+- Corrected author and contact metadata (Modrinth + GitHub links)
+
 ## [1.0.0] - 2026-07-03
 
 ### Added

@@ -2,7 +2,7 @@
 
 **Track every cast. Know every catch. Master the art of fishing!**
 
-A client-side Minecraft Fabric mod that automatically tracks and analyzes all your fishing activity, recording casts, catches, bite times and treasure rates in real-time with a detailed session history, statistics and HUD overlay.
+A client-side Minecraft mod for Fabric and NeoForge that automatically tracks and analyzes all your fishing activity, recording casts, catches, bite times and treasure rates in real-time with a detailed session history, statistics and HUD overlay.
 
 ## Features
 
@@ -20,29 +20,38 @@ A client-side Minecraft Fabric mod that automatically tracks and analyzes all yo
 
 ## Compatibility
 
-| Branch | Minecraft | Fabric Loader | Java |
-|--------|-----------|---------------|------|
-| `mc26.2` | 26.2 | 0.19.2+ | 25+ |
-| `mc26.1` | 26.1 | 0.18.4+ | 25+ |
+| Branch | Minecraft | Loaders | Java |
+|--------|-----------|---------|------|
+| `mc26.2` | 26.2 | Fabric 0.19.2+ / NeoForge 26.2+ | 25+ |
+| `mc26.1` | 26.1 - 26.1.2 | Fabric 0.18.4+ / NeoForge 26.1.2 | 25+ |
 
-**Fabric API** is required; **ModMenu** and **YACL** are recommended for the in-game config screen.
+Both a Fabric and a NeoForge jar are built from one codebase. On Fabric, **Fabric API** is required and **ModMenu** + **YACL** are recommended for the in-game config screen; on NeoForge, **YACL** is optional and the config screen opens from the mod list.
 
 ## Download
 
-Download the matching jar for your Minecraft version from [GitHub Releases](https://github.com/dennisthegamer/FishingStats/releases).
+Download the matching jar for your Minecraft version from [GitHub Releases](https://github.com/DennisTheGamer/FishingStats/releases).
 
 ## Installation
+
+### Fabric
 
 1. Install [Fabric Loader](https://fabricmc.net/use/)
 2. Download [Fabric API](https://modrinth.com/mod/fabric-api)
 3. Download [ModMenu](https://modrinth.com/mod/modmenu) and [YACL](https://modrinth.com/mod/yacl)
-4. Download FishingStats (this mod)
+4. Download the `fishingstats-fabric-...` jar
 5. Place all JAR files in your `mods` folder
 6. Launch Minecraft
 
+### NeoForge
+
+1. Install the [NeoForge](https://neoforged.net/) loader
+2. (Optional) Download [YACL](https://modrinth.com/mod/yacl) if you want the in-game config screen
+3. Download the `fishingstats-neoforge-...` jar and place it in your `mods` folder
+4. Launch Minecraft
+
 ## Configuration
 
-Open the config screen via ModMenu. Available settings:
+Open the config screen via ModMenu (on NeoForge, use the **Config** button in the mod list). Available settings:
 
 - **HUD** - Overlay on/off, compact mode, position (4 corners), opacity (0-100%), scale (50-150%), visibility mode
 - **Tracking** - Track treasure only, session auto-split timeout, session persistence
@@ -58,7 +67,7 @@ Config is saved to `config/fishingstats.json`, session data to `config/fishingst
 ## Building from Source
 
 ```bash
-git clone https://github.com/dennisthegamer/FishingStats.git
+git clone https://github.com/DennisTheGamer/FishingStats.git
 cd FishingStats
 ./gradlew build
 ```
@@ -71,9 +80,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Credits
 
-- **Author**: DennisTheGamer
-- **Built with**: Fabric, Fabric API, YACL, ModMenu
+- **Author**: Dennis_thegamer
+- **Built with**: Fabric, NeoForge, Fabric API, YACL, ModMenu
 
 ## Support
 
-Report bugs on [GitHub Issues](https://github.com/dennisthegamer/FishingStats/issues).
+Report bugs on [GitHub Issues](https://github.com/DennisTheGamer/FishingStats/issues).

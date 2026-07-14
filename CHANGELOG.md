@@ -5,11 +5,11 @@ All notable changes to FishingStats will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.0] - 2026-07-14
 
 ### Added
 - NeoForge support: the repo now builds two jars from one codebase -
-  `fishingstats-fabric-mc<mc>-<version>.jar` and `fishingstats-neoforge-mc<mc>-<version>.jar`
+  `fishingstats-fabric-1.1.0+mc26.2.jar` and `fishingstats-neoforge-1.1.0+mc26.2.jar`
 - Config screen on NeoForge via the mod list "Config" button (`IConfigScreenFactory`);
   on Fabric it remains available through ModMenu
 
@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   NeoForge 26.2.0.10-beta
 - YACL dependency bumped from 3.9.4+26.2 to 3.9.5+26.2 (3.9.4 is no longer
   available on the maven)
+- Unified the mod version to 1.1.0 across all loaders and Minecraft versions so
+  every build carries one release number
+- Standardized jar naming to `fishingstats-<loader>-<version>+mc<range>`
+- Corrected author and contact metadata (Modrinth + GitHub links)
 
 ## [1.0.0] - 2026-07-03
 

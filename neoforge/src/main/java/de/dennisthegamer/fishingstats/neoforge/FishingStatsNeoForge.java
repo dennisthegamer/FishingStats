@@ -4,6 +4,7 @@ import de.dennisthegamer.fishingstats.FishingStatsClient;
 import de.dennisthegamer.fishingstats.config.FishingStatsConfigScreen;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 
@@ -15,7 +16,9 @@ public final class FishingStatsNeoForge {
         FishingStatsClient.init();
 
         // Config screen (equivalent of the ModMenu integration on Fabric; needs YACL installed)
-        container.registerExtensionPoint(IConfigScreenFactory.class,
-                (modContainer, parent) -> FishingStatsConfigScreen.create(parent));
+        if (ModList.get().isLoaded("yet_another_config_lib_v3")) {
+            container.registerExtensionPoint(IConfigScreenFactory.class,
+                            (modContainer, parent) -> FishingStatsConfigScreen.create(parent));
+        }
     }
 }

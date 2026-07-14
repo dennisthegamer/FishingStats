@@ -7,7 +7,10 @@
 	"authors": [
 		"Dennis_thegamer"
 	],
-	"contact": {},
+	"contact": {
+		"homepage": "https://modrinth.com/mod/fishingstats",
+		"issues": "https://github.com/DennisTheGamer/FishingStats/issues"
+	},
 	"license": "MIT",
 	"environment": "client",
 	"entrypoints": {

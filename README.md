@@ -31,7 +31,7 @@ A client-side Minecraft Fabric mod that automatically tracks and analyzes all yo
 
 ## Download
 
-Download the matching jar for your Minecraft version from [GitHub Releases](https://github.com/dennisthegamer/FishingStats/releases).
+Download the matching jar for your Minecraft version from [GitHub Releases](https://github.com/DennisTheGamer/FishingStats/releases).
 
 ## Installation
 
@@ -60,7 +60,7 @@ Config is saved to `config/fishingstats.json`, session data to `config/fishingst
 ## Building from Source
 
 ```bash
-git clone https://github.com/dennisthegamer/FishingStats.git
+git clone https://github.com/DennisTheGamer/FishingStats.git
 cd FishingStats
 ./gradlew build
 ```
@@ -73,9 +73,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Credits
 
-- **Author**: DennisTheGamer
+- **Author**: Dennis_thegamer
 - **Built with**: Fabric, Fabric API, YACL, ModMenu
 
 ## Support
 
-Report bugs on [GitHub Issues](https://github.com/dennisthegamer/FishingStats/issues).
+Report bugs on [GitHub Issues](https://github.com/DennisTheGamer/FishingStats/issues).

@@ -1,0 +1,53 @@
+plugins { id 'com.gradleup.shadow' }
+
+architectury { platformSetupLoomIde(); fabric() }
+
+configurations {
+	common
+	shadowCommon
+	compileClasspath.extendsFrom common
+	runtimeClasspath.extendsFrom common
+	developmentFabric.extendsFrom common
+}
+
+dependencies {
+	modImplementation "net.fabricmc:fabric-loader:${rootProject.loader_version}"
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${rootProject.fabric_version}"
+	modApi "dev.architectury:architectury-fabric:${rootProject.architectury_version}"
+	// ModMenu 14.0.2 pulls a broken twelvemonkeys webp SPI into the dev runtime (ImageIO
+	// ServiceConfigurationError); it is never bundled, so keep it compile-only here.
+	modCompileOnly "maven.modrinth:modmenu:${rootProject.modmenu_version}"
+	// YACL is compile-only: 3.7.1+1.21.6 is the highest arch-loom 1.11.454 accepts (old
+	// accessWidener), but it declares minecraft>=1.21.6 so it cannot run on 1.21.5, and the
+	// 1.21.5 build (3.8.2+) uses a classTweaker widener arch-loom rejects at build time.
+	// Users install the matching YACL into their 1.21.5 instance; dev runs without it.
+	modCompileOnly "dev.isxander:yet-another-config-lib:${rootProject.yacl_version}-fabric"
+	common(project(path: ':common', configuration: 'namedElements')) { transitive = false }
+	shadowCommon(project(path: ':common', configuration: 'transformProductionFabric')) { transitive = false }
+}
+
+processResources {
+	inputs.property 'version', project.version
+
+	filesMatching('fabric.mod.json') {
+		expand 'version': project.version
+	}
+}
+
+shadowJar {
+	exclude 'architectury.common.json'
+	configurations = [project.configurations.shadowCommon]
+	archiveClassifier = 'dev-shadow'
+}
+
+remapJar {
+	input.set shadowJar.archiveFile
+	dependsOn shadowJar
+	archiveClassifier = null
+}
+
+jar {
+	from(rootProject.file('LICENSE')) {
+		rename { "${it}_${rootProject.archives_base_name}" }
+	}
+}

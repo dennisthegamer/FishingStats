@@ -48,8 +48,8 @@ dependencies {
 	localRuntime "org.quiltmc.parsers:json:0.3.1"
 	localRuntime "org.quiltmc.parsers:gson:0.3.1"
 
-	// YACL for configuration screens
-	modImplementation "maven.modrinth:yacl:${project.yacl_version}"
+	// YACL for configuration screens (isXander maven; users install separately)
+	modImplementation "dev.isxander:yet-another-config-lib:${project.yacl_version}"
 }
 
 processResources {

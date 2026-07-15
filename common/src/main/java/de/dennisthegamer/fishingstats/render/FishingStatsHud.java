@@ -75,6 +75,17 @@ public class FishingStatsHud {
         String castsLine = I18n.get("fishingstats.hud.casts", snapshot.casts(), snapshot.catches());
         String treasureLine = I18n.get("fishingstats.hud.treasure", snapshot.treasurePercent());
 
+        // Running session time in the title ("Name - 12:34"); compact appends it to the
+        // stats line. Pause symbol (U+23F8) only while paused - no "active" text.
+        var activeSession = SessionManager.getInstance().getActiveSession();
+        if (activeSession != null) {
+            String dot = " " + (char) 0x00B7 + " ";                                       // middle dot
+            String status = activeSession.formattedDuration()
+                    + (SessionManager.getInstance().isPaused() ? " " + (char) 0x23F8 : ""); // pause glyph
+            if (compact) castsLine = castsLine + dot + status;
+            else title = title + dot + status;
+        }
+
         int lineHeight = font.lineHeight + 2;
         boolean hasCatchIcon = !compact && !snapshot.lastCatch().isEmpty();
         int textWidth = compact

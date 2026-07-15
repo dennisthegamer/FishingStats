@@ -5,7 +5,7 @@ All notable changes to FishingStats will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.0] - 2026-07-14
+## [1.1.0] - 2026-07-14
 
 ### Added
 - **NeoForge support** for Minecraft 1.21.6-1.21.8 - FishingStats now ships as both
@@ -15,10 +15,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Restructured into `common` / `fabric` / `neoforge` modules; all game logic is shared
 - Keybinds, the HUD layer and the tick hook are now registered through Architectury API
 - Architectury API is now a required dependency
-
-## [1.1.0] - 2026-07-14
-
-### Changed
 - Unified the mod version to 1.1.0 across all loaders and Minecraft versions so
   every build carries one release number
 - Standardized jar naming to `fishingstats-<loader>-<version>+mc<range>`

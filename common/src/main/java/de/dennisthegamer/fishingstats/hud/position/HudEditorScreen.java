@@ -105,6 +105,9 @@ public class HudEditorScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (super.mouseClicked(mouseX, mouseY, button)) {
+            return true;
+        }
         if (button == 0) {
             int smx = (int) (mouseX / scale);
             int smy = (int) (mouseY / scale);
@@ -115,7 +118,7 @@ public class HudEditorScreen extends Screen {
                 return true;
             }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return false;
     }
 
     @Override

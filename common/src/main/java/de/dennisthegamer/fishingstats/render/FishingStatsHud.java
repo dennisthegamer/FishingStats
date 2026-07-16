@@ -2,7 +2,6 @@ package de.dennisthegamer.fishingstats.render;
 
 import de.dennisthegamer.fishingstats.config.FishingStatsConfig;
 import de.dennisthegamer.fishingstats.data.FishingSession;
-import de.dennisthegamer.fishingstats.hud.position.HudPlacement;
 import de.dennisthegamer.fishingstats.tracker.SessionManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -18,7 +17,6 @@ import net.minecraft.world.item.ItemStack;
 public class FishingStatsHud {
 
     private static final int PADDING = 6;
-    private static final int MARGIN = 10;
     private static final int FLASH_DURATION = 15;
 
     /** Immutable snapshot extracted in the tick phase. */

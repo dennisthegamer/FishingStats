@@ -2,12 +2,17 @@ package de.dennisthegamer.fishingstats.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import de.dennisthegamer.fishingstats.hud.position.HudPlacement;
+import de.dennisthegamer.fishingstats.hud.position.HudPositionMigration;
+import de.dennisthegamer.fishingstats.hud.position.HudPreset;
 import de.dennisthegamer.fishingstats.platform.Platforms;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class FishingStatsConfig {
 
@@ -23,7 +28,13 @@ public class FishingStatsConfig {
     public boolean hudEnabled = true;
     /** Single-line HUD (casts and catches only); toggled via keybind or config screen. */
     public boolean hudCompact = false;
+    /** @deprecated Legacy-4-Ecken-Feld; nur noch zum Migrieren gelesen. Wird nach load() genullt. */
+    @Deprecated
     public String hudPosition = "TOP_LEFT";
+    /** Freie HUD-Position (Anker + Offset). Nach {@link #load()} immer non-null. */
+    public HudPlacement hudPlacement = null;
+    /** Vom Nutzer gespeicherte Positions-Slots. */
+    public List<HudPreset> hudSlots = new ArrayList<>();
     public boolean hudVisibleAlways = false;
     public float hudOpacity = 0.6f;
     public float hudScale = 1.0f;
@@ -53,6 +64,7 @@ public class FishingStatsConfig {
             try (FileReader reader = new FileReader(CONFIG_FILE)) {
                 FishingStatsConfig config = GSON.fromJson(reader, FishingStatsConfig.class);
                 if (config != null) {
+                    config.migrateHudPosition();
                     return config;
                 }
             } catch (IOException e) {
@@ -60,8 +72,25 @@ public class FishingStatsConfig {
             }
         }
         FishingStatsConfig config = new FishingStatsConfig();
+        config.migrateHudPosition();
         config.save();
         return config;
+    }
+
+    /**
+     * Einmalige Migration: befüllt {@link #hudPlacement} aus dem Legacy-{@link #hudPosition},
+     * falls noch nicht gesetzt, und stoppt das Persistieren des Legacy-Feldes.
+     * Gson serialisiert null-Felder standardmäßig nicht, daher verschwindet {@code hudPosition}
+     * beim nächsten {@link #save()} aus der JSON.
+     */
+    public void migrateHudPosition() {
+        if (hudPlacement == null) {
+            hudPlacement = HudPositionMigration.fromLegacy(hudPosition);
+        }
+        hudPosition = null;
+        if (hudSlots == null) {
+            hudSlots = new ArrayList<>();
+        }
     }
 
     public void save() {

@@ -107,15 +107,4 @@ public class FishingStatsConfig {
         }
     }
 
-    public HudPosition getHudPosition() {
-        try {
-            return HudPosition.valueOf(hudPosition);
-        } catch (IllegalArgumentException e) {
-            return HudPosition.TOP_LEFT;
-        }
-    }
-
-    public enum HudPosition {
-        TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT
-    }
 }

@@ -32,7 +32,7 @@ side = "CLIENT"
 [[dependencies.fishingstats]]
 modId = "architectury"
 type = "required"
-versionRange = "[16.1.4,)"
+versionRange = "[13.0.0,)"
 ordering = "AFTER"
 side = "CLIENT"
 

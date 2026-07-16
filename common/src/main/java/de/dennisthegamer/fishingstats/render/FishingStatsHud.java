@@ -21,10 +21,15 @@ public class FishingStatsHud {
     private static final int PADDING = 6;
     private static final int FLASH_DURATION = 15;
 
-    /** Immutable snapshot extracted in the tick phase. */
-    private record HudState(int casts, int catches, int treasurePercent, ItemStack lastCatch, boolean fishingNow) {}
+    /**
+     * Immutable snapshot extracted in the tick phase. {@code duration} is empty when no session
+     * runs; it lives in the snapshot rather than being read from {@link SessionManager} while
+     * drawing, so the editor preview can supply a fixed one and keep a stable box width.
+     */
+    private record HudState(int casts, int catches, int treasurePercent, ItemStack lastCatch,
+                            boolean fishingNow, String duration, boolean paused) {}
 
-    private static HudState state = new HudState(0, 0, 0, ItemStack.EMPTY, false);
+    private static HudState state = new HudState(0, 0, 0, ItemStack.EMPTY, false, "", false);
     private static ItemStack lastCatch = ItemStack.EMPTY;
     private static final HudFlash flash = new HudFlash(FLASH_DURATION);
 
@@ -41,11 +46,32 @@ public class FishingStatsHud {
         FishingSession session = SessionManager.getInstance().getActiveSession();
         boolean fishingNow = client.player != null && client.player.fishing != null;
         if (session == null) {
-            state = new HudState(0, 0, 0, lastCatch, fishingNow);
+            state = new HudState(0, 0, 0, lastCatch, fishingNow, "", false);
         } else {
             state = new HudState(session.totalCasts, session.catches.size(),
-                    session.treasurePercent(), lastCatch, fishingNow);
+                    session.treasurePercent(), lastCatch, fishingNow,
+                    session.formattedDuration(), SessionManager.getInstance().isPaused());
         }
+    }
+
+    /** " · 12:34" bzw. " · 12:34 ⏸" — leer, solange keine Session läuft. */
+    private static String statusSuffix(HudState snapshot) {
+        if (snapshot.duration().isEmpty()) return "";
+        return " " + (char) 0x00B7 + " " + snapshot.duration()          // middle dot
+                + (snapshot.paused() ? " " + (char) 0x23F8 : "");       // pause glyph
+    }
+
+    // Die Session-Zeit hängt im Titel; kompakt gibt es keinen Titel, dort an der Stats-Zeile.
+    // computeLayout() und draw() MÜSSEN dieselben Strings sehen, sonst passt die Box nicht zum Text.
+
+    private static String titleText(HudState snapshot, boolean compact) {
+        String title = I18n.get("fishingstats.hud.title");
+        return compact ? title : title + statusSuffix(snapshot);
+    }
+
+    private static String castsText(HudState snapshot, boolean compact) {
+        String casts = I18n.get("fishingstats.hud.casts", snapshot.casts(), snapshot.catches());
+        return compact ? casts + statusSuffix(snapshot) : casts;
     }
 
     /** Ergebnis der Größenberechnung; von render(), measureBox() und draw() geteilt. */
@@ -53,8 +79,8 @@ public class FishingStatsHud {
 
     private static Layout computeLayout(FishingStatsConfig config, HudState snapshot, Font font) {
         boolean compact = config.hudCompact;
-        String title = I18n.get("fishingstats.hud.title");
-        String castsLine = I18n.get("fishingstats.hud.casts", snapshot.casts(), snapshot.catches());
+        String title = titleText(snapshot, compact);
+        String castsLine = castsText(snapshot, compact);
         String treasureLine = I18n.get("fishingstats.hud.treasure", snapshot.treasurePercent());
 
         int lineHeight = font.lineHeight + 2;
@@ -87,12 +113,12 @@ public class FishingStatsHud {
         int lineHeight = font.lineHeight + 2;
         int currentY = y + PADDING;
         if (layout.compact()) {
-            String castsLine = I18n.get("fishingstats.hud.casts", snapshot.casts(), snapshot.catches());
+            String castsLine = castsText(snapshot, true);
             graphics.drawString(font, castsLine, x + PADDING, currentY, 0xFFFFFFFF, true);
             return;
         }
-        String title = I18n.get("fishingstats.hud.title");
-        String castsLine = I18n.get("fishingstats.hud.casts", snapshot.casts(), snapshot.catches());
+        String title = titleText(snapshot, false);
+        String castsLine = castsText(snapshot, false);
         String treasureLine = I18n.get("fishingstats.hud.treasure", snapshot.treasurePercent());
         graphics.drawString(font, title, x + (hudWidth - font.width(title)) / 2, currentY, 0xFFFFD700, true);
         currentY += lineHeight;
@@ -142,9 +168,12 @@ public class FishingStatsHud {
 
     // --- Editor-Vorschau -----------------------------------------------------
 
-    /** Beispiel-Snapshot, damit die Box im Editor immer sichtbar/realistisch groß ist. */
+    /**
+     * Beispiel-Snapshot, damit die Box im Editor immer sichtbar/realistisch groß ist.
+     * Feste Dauer statt der laufenden: sonst änderte die Box im Editor beim Ziehen ihre Breite.
+     */
     private static HudState sampleState() {
-        return new HudState(42, 7, 15, ItemStack.EMPTY, false);
+        return new HudState(42, 7, 15, ItemStack.EMPTY, false, "12:34", false);
     }
 
     /** Box-Maße {width,height} der Beispiel-Box (scale-unabhängig, Font-basiert). */

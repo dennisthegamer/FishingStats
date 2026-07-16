@@ -23,9 +23,20 @@ public final class NeoForgePlatform implements Platform {
         return BuiltInRegistries.ITEM.getKey(item).toString();
     }
 
+    private java.util.Map<ResourceLocation, Item> itemById;
+
     @Override
     public Item itemFromId(String id) {
-        return BuiltInRegistries.ITEM.getValue(ResourceLocation.parse(id));
+        // Version-agnostic reverse lookup built from the stable getKey(); avoids
+        // Registry.get()/getValue() which changed signature at 1.21.2.
+        if (itemById == null) {
+            java.util.Map<ResourceLocation, Item> m = new java.util.HashMap<>();
+            for (Item item : BuiltInRegistries.ITEM) {
+                m.put(BuiltInRegistries.ITEM.getKey(item), item);
+            }
+            itemById = m;
+        }
+        return itemById.get(ResourceLocation.parse(id));
     }
 
     @Override

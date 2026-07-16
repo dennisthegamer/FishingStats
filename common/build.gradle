@@ -10,6 +10,9 @@ dependencies {
 	// hudlib-core: shared HUD position/color primitives (pure Java, no Minecraft refs).
 	// api, so fabric/neoforge (which depend on :common) see these types too.
 	api "de.dennisthegamer:hudlib-core:1.0.0"
+	// hudlib-ui: shared drag-editor/preset screens (Minecraft-referencing). modImplementation
+	// so loom remaps its MC references (named-mapped published jar) for common's dev compile.
+	modImplementation "de.dennisthegamer:hudlib-ui:1.0.0+mc1.21.5"
 }
 
 repositories {

@@ -1,6 +1,7 @@
 package de.dennisthegamer.fishingstats.config;
 
-import de.dennisthegamer.fishingstats.hud.position.HudEditorScreen;
+import de.dennisthegamer.fishingstats.hud.FishingStatsHudBox;
+import de.dennisthegamer.fishingstats.hud.FishingStatsSlotStore;
 import dev.isxander.yacl3.api.*;
 import dev.isxander.yacl3.api.controller.*;
 import net.minecraft.client.Minecraft;
@@ -40,8 +41,12 @@ public class FishingStatsConfigScreen {
                 .option(ButtonOption.createBuilder()
                         .name(Component.translatable("config.fishingstats.hud_edit"))
                         .description(OptionDescription.of(Component.translatable("config.fishingstats.hud_edit.tooltip")))
-                        .action((yaclScreen, opt) ->
-                                Minecraft.getInstance().setScreen(new HudEditorScreen(yaclScreen)))
+                        .action((yaclScreen, opt) -> {
+                            FishingStatsConfig cfg = FishingStatsConfig.getInstance();
+                            Minecraft.getInstance().setScreen(new de.dennisthegamer.hudlib.ui.HudEditorScreen(
+                                    yaclScreen, new FishingStatsHudBox(), new FishingStatsSlotStore(),
+                                    () -> cfg.hudPlacement, p -> { cfg.hudPlacement = p; cfg.save(); }));
+                        })
                         .build())
                 .option(Option.<Boolean>createBuilder()
                         .name(Component.translatable("config.fishingstats.hud_visible_always"))

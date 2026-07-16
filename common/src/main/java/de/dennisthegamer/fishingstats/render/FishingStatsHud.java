@@ -3,6 +3,8 @@ package de.dennisthegamer.fishingstats.render;
 import de.dennisthegamer.fishingstats.config.FishingStatsConfig;
 import de.dennisthegamer.fishingstats.data.FishingSession;
 import de.dennisthegamer.fishingstats.tracker.SessionManager;
+import de.dennisthegamer.hudlib.color.HudColors;
+import de.dennisthegamer.hudlib.color.HudFlash;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -24,17 +26,17 @@ public class FishingStatsHud {
 
     private static HudState state = new HudState(0, 0, 0, ItemStack.EMPTY, false);
     private static ItemStack lastCatch = ItemStack.EMPTY;
-    private static int flashTicksRemaining = 0;
+    private static final HudFlash flash = new HudFlash(FLASH_DURATION);
 
     /** Called by the tracker for every detected catch (also in treasure-only mode). */
     public static void onCatch(ItemStack stack) {
         lastCatch = stack;
-        flashTicksRemaining = FLASH_DURATION;
+        flash.trigger(HudColors.GOLD);
     }
 
     /** Data extraction phase - runs on the client tick, never during rendering. */
     public static void tick(Minecraft client) {
-        if (flashTicksRemaining > 0) flashTicksRemaining--;
+        flash.tick();
 
         FishingSession session = SessionManager.getInstance().getActiveSession();
         boolean fishingNow = client.player != null && client.player.fishing != null;
@@ -73,13 +75,13 @@ public class FishingStatsHud {
         int hudWidth = layout.width();
         int hudHeight = layout.height();
 
-        int bgColor = ((int) (config.hudOpacity * 255) << 24);
+        int bgColor = HudColors.backgroundColor(config.hudOpacity);
         graphics.fill(x, y, x + hudWidth, y + hudHeight, bgColor);
 
-        if (allowFlash && flashTicksRemaining > 0) {
-            float alpha = (float) flashTicksRemaining / FLASH_DURATION;
+        if (allowFlash && flash.isActive()) {
+            float alpha = flash.progress();
             int flashAlpha = (int) (alpha * 80);
-            graphics.fill(x - 1, y - 1, x + hudWidth + 1, y + hudHeight + 1, (flashAlpha << 24) | 0xFFD700);
+            graphics.fill(x - 1, y - 1, x + hudWidth + 1, y + hudHeight + 1, (flashAlpha << 24) | flash.color());
         }
 
         int lineHeight = font.lineHeight + 2;

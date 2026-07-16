@@ -95,7 +95,12 @@ public class HudEditorScreen extends Screen {
 
     @Override
     public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        // Kein Abdunkeln: die laufende Welt soll sichtbar bleiben (wie im Referenz-Screenshot).
+        // In-game: kein Abdunkeln, die laufende Welt bleibt sichtbar (wie im Referenz-Screenshot).
+        // Ohne geladene Welt (vom Titelbildschirm aus geöffnet) gäbe das einen komplett schwarzen
+        // Screen, daher dort den normalen Menü-Hintergrund (Panorama/Blur) zeichnen.
+        if (Minecraft.getInstance().level == null) {
+            super.renderBackground(graphics, mouseX, mouseY, partialTick);
+        }
     }
 
     @Override

@@ -2,6 +2,8 @@ plugins { id 'com.gradleup.shadow' }
 
 architectury { platformSetupLoomIde(); neoForge() }
 
+repositories { mavenLocal() }
+
 configurations {
 	common
 	shadowCommon
@@ -16,6 +18,8 @@ dependencies {
 	modCompileOnly "dev.isxander:yet-another-config-lib:${rootProject.yacl_version}-neoforge"
 	common(project(path: ':common', configuration: 'namedElements')) { transitive = false }
 	shadowCommon(project(path: ':common', configuration: 'transformProductionNeoForge')) { transitive = false }
+	// jar-in-jar: hudlib-core is pure Java (no Minecraft refs), so it can be included directly.
+	include "de.dennisthegamer:hudlib-core:1.0.0"
 }
 
 processResources {

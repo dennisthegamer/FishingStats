@@ -2,10 +2,10 @@ package de.dennisthegamer.fishingstats.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import de.dennisthegamer.fishingstats.hud.position.HudPlacement;
-import de.dennisthegamer.fishingstats.hud.position.HudPositionMigration;
-import de.dennisthegamer.fishingstats.hud.position.HudPreset;
 import de.dennisthegamer.fishingstats.platform.Platforms;
+import de.dennisthegamer.hudlib.position.HudPlacement;
+import de.dennisthegamer.hudlib.position.HudPositionMigration;
+import de.dennisthegamer.hudlib.position.HudPreset;
 
 import java.io.File;
 import java.io.FileReader;

@@ -2,6 +2,9 @@ package de.dennisthegamer.fishingstats.hud.position;
 
 import de.dennisthegamer.fishingstats.config.FishingStatsConfig;
 import de.dennisthegamer.fishingstats.render.FishingStatsHud;
+import de.dennisthegamer.hudlib.position.HudAnchor;
+import de.dennisthegamer.hudlib.position.HudPlacement;
+import de.dennisthegamer.hudlib.position.HudPreset;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;

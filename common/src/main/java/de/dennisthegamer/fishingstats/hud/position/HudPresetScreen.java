@@ -1,6 +1,7 @@
 package de.dennisthegamer.fishingstats.hud.position;
 
 import de.dennisthegamer.fishingstats.config.FishingStatsConfig;
+import de.dennisthegamer.fishingstats.render.FishingStatsHud;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -39,10 +40,7 @@ public class HudPresetScreen extends Screen {
             int row = i / 3;
             addRenderableWidget(Button.builder(
                             Component.translatable(anchor.translationKey()),
-                            b -> {
-                                editor.applyWorking(HudPlacement.of(anchor));
-                                Minecraft.getInstance().setScreen(editor);
-                            })
+                            b -> editor.applyWorking(HudPlacement.of(anchor)))
                     .bounds(gridLeft + col * 104, gridTop + row * 22, 100, 20)
                     .build());
         }
@@ -55,10 +53,7 @@ public class HudPresetScreen extends Screen {
             int y = slotTop + i * 22;
             addRenderableWidget(Button.builder(
                             Component.translatable("fishingstats.hud.preset.apply_named", slot.name()),
-                            b -> {
-                                editor.applyWorking(config.hudSlots.get(index).placement());
-                                Minecraft.getInstance().setScreen(editor);
-                            })
+                            b -> editor.applyWorking(config.hudSlots.get(index).placement()))
                     .bounds(gridLeft, y, 160, 20).build());
             addRenderableWidget(Button.builder(
                             Component.translatable("fishingstats.hud.preset.rename"),
@@ -119,6 +114,35 @@ public class HudPresetScreen extends Screen {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
         graphics.drawCenteredString(this.font, this.title, this.width / 2, 16, 0xFFFFFFFF);
+    }
+
+    @Override
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        // Konsistent zum Editor: in-game bleibt die Welt sichtbar; ohne geladene Welt (Titelscreen)
+        // den normalen Menü-Hintergrund zeichnen. Anschließend die HUD-Vorschau zeichnen - dies
+        // läuft VOR dem Widget-Rendering von super.render(), also liegen die Picker-Buttons oben und
+        // bleiben klickbar, während das HUD an seiner aktuellen Position sichtbar ist.
+        if (Minecraft.getInstance().level == null) {
+            super.renderBackground(graphics, mouseX, mouseY, partialTick);
+        }
+        drawHudPreview(graphics);
+    }
+
+    /** Zeichnet die HUD-Beispiel-Box an der aktuellen Arbeitskopie des Editors (Live-Vorschau). */
+    private void drawHudPreview(GuiGraphics graphics) {
+        FishingStatsConfig config = FishingStatsConfig.getInstance();
+        float scale = config.hudScale <= 0 ? 1.0f : config.hudScale;
+        int[] wh = FishingStatsHud.measureBox();
+        int scaledW = (int) (this.width / scale);
+        int scaledH = (int) (this.height / scale);
+        HudPlacement placement = editor.working();
+        int x = placement.resolveX(scaledW, wh[0]);
+        int y = placement.resolveY(scaledH, wh[1]);
+        FishingStatsHud.drawPreview(graphics, x, y, scale);
+
+        int px = (int) (x * scale), py = (int) (y * scale);
+        int pw = (int) (wh[0] * scale), ph = (int) (wh[1] * scale);
+        graphics.renderOutline(px - 1, py - 1, pw + 2, ph + 2, 0xFFFFD700);
     }
 
     @Override

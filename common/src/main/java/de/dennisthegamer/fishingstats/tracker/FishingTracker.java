@@ -237,7 +237,7 @@ public class FishingTracker {
         }
     }
 
-    /** Auch vom Session-Key gebraucht: geht über Platforms.keyId, weil ResourceLocation ab 1.21.11 Identifier heisst. */
+    /** Auch vom Session-Key gebraucht. 26.x ist unobfusziert, daher direkt ueber identifier(). */
     public static String dimensionId(Level level) {
         return level.dimension().identifier().getPath();
     }

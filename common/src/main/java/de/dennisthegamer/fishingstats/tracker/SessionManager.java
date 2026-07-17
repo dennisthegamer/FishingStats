@@ -83,6 +83,20 @@ public class SessionManager {
         return FishingStatsConfig.getInstance().sessionSplitMinutes * 60_000L;
     }
 
+    /**
+     * Legt eine Session an, falls keine läuft. Der Toggle-Key verspricht "Session starten" und die
+     * Beitrittsnachricht sagt "Drücke [X] um die Session zu starten" — er legte aber nur die Pause ab,
+     * sodass "Session gestartet!" im Chat stand, während gar keine Session lief.
+     * Bewusst NICHT in resume(): das wird auch beim Schliessen des ESC-Menüs gerufen und darf dort
+     * keine Session anlegen.
+     */
+    public void startIfNone(long now, String dimension) {
+        if (active != null) return;
+        active = FishingDataStore.getInstance().startSession(now, dimension, worldKey);
+        FishingStatsClient.LOGGER.info("Fishing session #{} started (session key)", active.id);
+        FishingDataStore.getInstance().saveToDisk();
+    }
+
     public void onCast(long now, String dimension) {
         if (paused) return;
         if (active != null && now - lastActivityMs > timeoutMs()) {

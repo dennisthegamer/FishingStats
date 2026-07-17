@@ -237,7 +237,8 @@ public class FishingTracker {
         }
     }
 
-    private static String dimensionId(Level level) {
+    /** Auch vom Session-Key gebraucht: geht über Platforms.keyId, weil ResourceLocation ab 1.21.11 Identifier heisst. */
+    public static String dimensionId(Level level) {
         return level.dimension().identifier().getPath();
     }
 

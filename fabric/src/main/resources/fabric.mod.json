@@ -30,7 +30,9 @@
 		"fabric-api": "*",
 		"architectury": ">=18.0.3",
 		"minecraft": ">=1.21.9 <=1.21.11",
-		"java": ">=21"
+		"java": ">=21",
+		"hudlib": ">=1.0",
+		"hudlibcore": ">=1.0"
 	},
 	"suggests": {
 		"modmenu": "*",

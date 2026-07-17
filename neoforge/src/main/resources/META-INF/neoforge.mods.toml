@@ -43,3 +43,10 @@ type = "optional"
 versionRange = "[3.8,)"
 ordering = "NONE"
 side = "CLIENT"
+
+[[dependencies.fishingstats]]
+modId = "hudlib"
+type = "required"
+versionRange = "[1.0,)"
+ordering = "NONE"
+side = "CLIENT"

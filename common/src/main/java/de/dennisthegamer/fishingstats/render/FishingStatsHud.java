@@ -3,6 +3,8 @@ package de.dennisthegamer.fishingstats.render;
 import de.dennisthegamer.fishingstats.config.FishingStatsConfig;
 import de.dennisthegamer.fishingstats.data.FishingSession;
 import de.dennisthegamer.fishingstats.tracker.SessionManager;
+import de.dennisthegamer.hudlib.color.HudColors;
+import de.dennisthegamer.hudlib.color.HudFlash;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -18,33 +20,119 @@ import org.joml.Matrix3x2fStack;
 public class FishingStatsHud {
 
     private static final int PADDING = 6;
-    private static final int MARGIN = 10;
     private static final int FLASH_DURATION = 15;
 
-    /** Immutable snapshot extracted in the tick phase. */
-    private record HudState(int casts, int catches, int treasurePercent, ItemStack lastCatch, boolean fishingNow) {}
+    /**
+     * Immutable snapshot extracted in the tick phase. {@code duration} is empty when no session
+     * runs; it lives in the snapshot rather than being read from {@link SessionManager} while
+     * drawing, so the editor preview can supply a fixed one and keep a stable box width.
+     */
+    private record HudState(int casts, int catches, int treasurePercent, ItemStack lastCatch,
+                            boolean fishingNow, String duration, boolean paused) {}
 
-    private static HudState state = new HudState(0, 0, 0, ItemStack.EMPTY, false);
+    private static HudState state = new HudState(0, 0, 0, ItemStack.EMPTY, false, "", false);
     private static ItemStack lastCatch = ItemStack.EMPTY;
-    private static int flashTicksRemaining = 0;
+    private static final HudFlash flash = new HudFlash(FLASH_DURATION);
 
     /** Called by the tracker for every detected catch (also in treasure-only mode). */
     public static void onCatch(ItemStack stack) {
         lastCatch = stack;
-        flashTicksRemaining = FLASH_DURATION;
+        flash.trigger(HudColors.GOLD);
     }
 
     /** Data extraction phase - runs on the client tick, never during rendering. */
     public static void tick(Minecraft client) {
-        if (flashTicksRemaining > 0) flashTicksRemaining--;
+        flash.tick();
 
         FishingSession session = SessionManager.getInstance().getActiveSession();
         boolean fishingNow = client.player != null && client.player.fishing != null;
         if (session == null) {
-            state = new HudState(0, 0, 0, lastCatch, fishingNow);
+            state = new HudState(0, 0, 0, lastCatch, fishingNow, "", false);
         } else {
             state = new HudState(session.totalCasts, session.catches.size(),
-                    session.treasurePercent(), lastCatch, fishingNow);
+                    session.treasurePercent(), lastCatch, fishingNow,
+                    session.formattedDuration(), SessionManager.getInstance().isPaused());
+        }
+    }
+
+    /** " · 12:34", " · 12:34 ⏸" oder " · keine Session" — nie leer. */
+    private static String statusSuffix(HudState snapshot) {
+        String status = snapshot.duration().isEmpty()
+                ? I18n.get("fishingstats.hud.no_session")
+                : snapshot.duration() + (snapshot.paused() ? " " + (char) 0x23F8 : "");  // pause glyph
+        return " " + (char) 0x00B7 + " " + status;                                       // middle dot
+    }
+
+    // Die Session-Zeit hängt im Titel; kompakt gibt es keinen Titel, dort an der Stats-Zeile.
+    // computeLayout() und draw() MÜSSEN dieselben Strings sehen, sonst passt die Box nicht zum Text.
+
+    private static String titleText(HudState snapshot, boolean compact) {
+        String title = I18n.get("fishingstats.hud.title");
+        return compact ? title : title + statusSuffix(snapshot);
+    }
+
+    private static String castsText(HudState snapshot, boolean compact) {
+        String casts = I18n.get("fishingstats.hud.casts", snapshot.casts(), snapshot.catches());
+        return compact ? casts + statusSuffix(snapshot) : casts;
+    }
+
+    /** Ergebnis der Größenberechnung; von render(), measureBox() und draw() geteilt. */
+    private record Layout(int width, int height, boolean compact, boolean hasCatchIcon) {}
+
+    private static Layout computeLayout(FishingStatsConfig config, HudState snapshot, Font font) {
+        boolean compact = config.hudCompact;
+        String title = titleText(snapshot, compact);
+        String castsLine = castsText(snapshot, compact);
+        String treasureLine = I18n.get("fishingstats.hud.treasure", snapshot.treasurePercent());
+
+        int lineHeight = font.lineHeight + 2;
+        boolean hasCatchIcon = !compact && !snapshot.lastCatch().isEmpty();
+        int textWidth = compact
+                ? font.width(castsLine)
+                : Math.max(font.width(title), Math.max(font.width(castsLine), font.width(treasureLine)));
+        int hudWidth = Math.max(textWidth + PADDING * 2, hasCatchIcon ? 90 : 0);
+        int hudHeight = compact
+                ? PADDING * 2 + font.lineHeight
+                : PADDING * 2 + lineHeight * 3 + (hasCatchIcon ? 20 : 0);
+        return new Layout(hudWidth, hudHeight, compact, hasCatchIcon);
+    }
+
+    /** Zeichnet die Box an (x,y). {@code allowFlash} nur fürs Live-HUD (nicht in der Vorschau). */
+    private static void draw(GuiGraphics graphics, int x, int y, Layout layout,
+                             HudState snapshot, Font font, FishingStatsConfig config, boolean allowFlash) {
+        int hudWidth = layout.width();
+        int hudHeight = layout.height();
+
+        int bgColor = HudColors.backgroundColor(config.hudOpacity);
+        graphics.fill(x, y, x + hudWidth, y + hudHeight, bgColor);
+
+        if (allowFlash && flash.isActive()) {
+            float alpha = flash.progress();
+            int flashAlpha = (int) (alpha * 80);
+            graphics.fill(x - 1, y - 1, x + hudWidth + 1, y + hudHeight + 1, (flashAlpha << 24) | flash.color());
+        }
+
+        int lineHeight = font.lineHeight + 2;
+        int currentY = y + PADDING;
+        if (layout.compact()) {
+            String castsLine = castsText(snapshot, true);
+            graphics.drawString(font, castsLine, x + PADDING, currentY, 0xFFFFFFFF, true);
+            return;
+        }
+        String title = titleText(snapshot, false);
+        String castsLine = castsText(snapshot, false);
+        String treasureLine = I18n.get("fishingstats.hud.treasure", snapshot.treasurePercent());
+        graphics.drawString(font, title, x + (hudWidth - font.width(title)) / 2, currentY, 0xFFFFD700, true);
+        currentY += lineHeight;
+        graphics.drawString(font, castsLine, x + PADDING, currentY, 0xFFFFFFFF, true);
+        currentY += lineHeight;
+        graphics.drawString(font, treasureLine, x + PADDING, currentY, 0xFFFFFFFF, true);
+        currentY += lineHeight;
+
+        if (layout.hasCatchIcon()) {
+            graphics.renderItem(snapshot.lastCatch(), x + PADDING, currentY);
+            graphics.drawString(font, I18n.get("fishingstats.hud.last_catch"),
+                    x + PADDING + 20, currentY + 4, 0xFFAAAAAA, true);
         }
     }
 
@@ -76,70 +164,42 @@ public class FishingStatsHud {
         int scaledWidth = (int) (graphics.guiWidth() / scale);
         int scaledHeight = (int) (graphics.guiHeight() / scale);
 
-        boolean compact = config.hudCompact;
-        String title = I18n.get("fishingstats.hud.title");
-        String castsLine = I18n.get("fishingstats.hud.casts", snapshot.casts(), snapshot.catches());
-        String treasureLine = I18n.get("fishingstats.hud.treasure", snapshot.treasurePercent());
+        Layout layout = computeLayout(config, snapshot, font);
+        int x = config.hudPlacement.resolveX(scaledWidth, layout.width());
+        int y = config.hudPlacement.resolveY(scaledHeight, layout.height());
 
-        // Running session time in the title ("Name - 12:34"); compact appends it to the
-        // stats line. Pause symbol (U+23F8) only while paused - no "active" text.
-        // Ohne Session steht dort "keine Session".
-        var activeSession = SessionManager.getInstance().getActiveSession();
-        String dot = " " + (char) 0x00B7 + " ";                                           // middle dot
-        String status = activeSession != null
-                ? activeSession.formattedDuration()
-                        + (SessionManager.getInstance().isPaused() ? " " + (char) 0x23F8 : "") // pause glyph
-                : I18n.get("fishingstats.hud.no_session");
-        if (compact) castsLine = castsLine + dot + status;
-        else title = title + dot + status;
+        draw(graphics, x, y, layout, snapshot, font, config, true);
+        pose.popMatrix();
+    }
 
-        int lineHeight = font.lineHeight + 2;
-        boolean hasCatchIcon = !compact && !snapshot.lastCatch().isEmpty();
-        int textWidth = compact
-                ? font.width(castsLine)
-                : Math.max(font.width(title), Math.max(font.width(castsLine), font.width(treasureLine)));
-        int hudWidth = Math.max(textWidth + PADDING * 2, hasCatchIcon ? 90 : 0);
-        int hudHeight = compact
-                ? PADDING * 2 + font.lineHeight
-                : PADDING * 2 + lineHeight * 3 + (hasCatchIcon ? 20 : 0);
+    // --- Editor-Vorschau -----------------------------------------------------
 
-        int x = switch (config.getHudPosition()) {
-            case TOP_LEFT, BOTTOM_LEFT -> MARGIN;
-            case TOP_RIGHT, BOTTOM_RIGHT -> scaledWidth - hudWidth - MARGIN;
-        };
-        int y = switch (config.getHudPosition()) {
-            case TOP_LEFT, TOP_RIGHT -> MARGIN;
-            case BOTTOM_LEFT, BOTTOM_RIGHT -> scaledHeight - hudHeight - MARGIN;
-        };
+    /**
+     * Beispiel-Snapshot, damit die Box im Editor immer sichtbar/realistisch groß ist.
+     * Feste Dauer statt der laufenden: sonst änderte die Box im Editor beim Ziehen ihre Breite.
+     */
+    private static HudState sampleState() {
+        return new HudState(42, 7, 15, ItemStack.EMPTY, false, "12:34", false);
+    }
 
-        int bgColor = ((int) (config.hudOpacity * 255) << 24);
-        graphics.fill(x, y, x + hudWidth, y + hudHeight, bgColor);
+    /** Box-Maße {width,height} der Beispiel-Box (scale-unabhängig, Font-basiert). */
+    public static int[] measureBox() {
+        FishingStatsConfig config = FishingStatsConfig.getInstance();
+        Font font = Minecraft.getInstance().font;
+        Layout layout = computeLayout(config, sampleState(), font);
+        return new int[] { layout.width(), layout.height() };
+    }
 
-        if (flashTicksRemaining > 0) {
-            float alpha = (float) flashTicksRemaining / FLASH_DURATION;
-            int flashAlpha = (int) (alpha * 80);
-            graphics.fill(x - 1, y - 1, x + hudWidth + 1, y + hudHeight + 1, (flashAlpha << 24) | 0xFFD700);
-        }
-
-        int currentY = y + PADDING;
-        if (compact) {
-            graphics.drawString(font, castsLine, x + PADDING, currentY, 0xFFFFFFFF, true);
-            pose.popMatrix();
-            return;
-        }
-        graphics.drawString(font, title, x + (hudWidth - font.width(title)) / 2, currentY, 0xFFFFD700, true);
-        currentY += lineHeight;
-        graphics.drawString(font, castsLine, x + PADDING, currentY, 0xFFFFFFFF, true);
-        currentY += lineHeight;
-        graphics.drawString(font, treasureLine, x + PADDING, currentY, 0xFFFFFFFF, true);
-        currentY += lineHeight;
-
-        if (hasCatchIcon) {
-            graphics.renderItem(snapshot.lastCatch(), x + PADDING, currentY);
-            graphics.drawString(font, I18n.get("fishingstats.hud.last_catch"),
-                    x + PADDING + 20, currentY + 4, 0xFFAAAAAA, true);
-        }
-
+    /** Zeichnet die Beispiel-Box im Editor an skalierter Position (x,y). */
+    public static void drawPreview(GuiGraphics graphics, int x, int y, float scale) {
+        FishingStatsConfig config = FishingStatsConfig.getInstance();
+        Font font = Minecraft.getInstance().font;
+        Matrix3x2fStack pose = graphics.pose();
+        pose.pushMatrix();
+        pose.scale(scale, scale);
+        HudState snapshot = sampleState();
+        Layout layout = computeLayout(config, snapshot, font);
+        draw(graphics, x, y, layout, snapshot, font, config, false);
         pose.popMatrix();
     }
 }

@@ -63,8 +63,6 @@
 	"config.fishingstats.category.tracking": "Tracking",
 	"config.fishingstats.hud_enabled": "HUD Overlay",
 	"config.fishingstats.hud_enabled.tooltip": "Show the live counter (casts, last catch) while fishing.",
-	"config.fishingstats.hud_position": "HUD Position",
-	"config.fishingstats.hud_position.tooltip": "Corner of the screen where the HUD is drawn.",
 	"config.fishingstats.hud_compact": "Compact Mode",
 	"config.fishingstats.hud_compact.tooltip": "Shrink the HUD to a single line (casts and catches only).",
 	"config.fishingstats.hud_visible_always": "Always Visible",
@@ -79,8 +77,6 @@
 	"config.fishingstats.session_split_minutes.tooltip": "Minutes without a cast after which the session ends automatically.",
 	"config.fishingstats.persist_sessions": "Persist Sessions",
 	"config.fishingstats.persist_sessions.tooltip": "Keep the active session when leaving the world and restore it on the next join.",
-	"config.fishingstats.position.top_left": "Top Left",
-	"config.fishingstats.position.top_right": "Top Right",
-	"config.fishingstats.position.bottom_left": "Bottom Left",
-	"config.fishingstats.position.bottom_right": "Bottom Right"
+	"config.fishingstats.hud_edit": "Edit HUD Position…",
+	"config.fishingstats.hud_edit.tooltip": "Open the drag editor to place the HUD freely and manage presets."
 }

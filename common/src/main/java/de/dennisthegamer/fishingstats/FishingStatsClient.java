@@ -21,34 +21,39 @@ import org.slf4j.LoggerFactory;
 /**
  * Shared (loader-free) client logic. Keybinds, the HUD layer and the end-of-tick hook are
  * registered here through Architectury API so that the same code runs on Fabric and NeoForge.
- *
- * <p>The keybinds use a vanilla {@link KeyMapping.Category} on purpose: registering a custom
- * category needs the {@code Identifier} class, whose mojmap name differs between 1.21.10
- * ({@code ResourceLocation}) and 1.21.11 ({@code Identifier}). A direct reference would crash
- * the NeoForge jar on 1.21.9/1.21.10, so this range avoids it entirely.
  */
 public final class FishingStatsClient {
 
     public static final String MOD_ID = "fishingstats";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
+    /**
+     * On this MC range the keybind category is a plain String that doubles as its own translation
+     * key. We reuse the key that {@code KeyMapping.Category(Identifier("fishingstats",
+     * "fishingstats"))} derives on 26.x, so every branch groups the binds under "FishingStats" from
+     * one shared lang entry. Vanilla only sorts known categories, but both loaders cope: Fabric API
+     * registers unknown ones into the sort order, and NeoForge's KeyMapping.compareTo null-checks
+     * the lookup.
+     */
+    private static final String CATEGORY = "key.category.fishingstats.fishingstats";
+
     public static final KeyMapping STATS_KEY = new KeyMapping(
             "key.fishingstats.open",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_O,
-            "key.categories.misc"
+            CATEGORY
     );
     public static final KeyMapping COMPACT_KEY = new KeyMapping(
             "key.fishingstats.toggle_compact",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_K,
-            "key.categories.misc"
+            CATEGORY
     );
     public static final KeyMapping SESSION_TOGGLE_KEY = new KeyMapping(
             "key.fishingstats.session_toggle",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_J,
-            "key.categories.misc"
+            CATEGORY
     );
 
     private static boolean wasInWorld = false;

@@ -56,6 +56,7 @@
 	"fishingstats.hud.casts": "Casts: %d · Catches: %d",
 	"fishingstats.hud.treasure": "Treasure: %d%%",
 	"fishingstats.hud.last_catch": "last catch",
+	"fishingstats.hud.no_session": "no session",
 
 	"config.fishingstats.title": "FishingStats Settings",
 	"config.fishingstats.category.hud": "HUD",

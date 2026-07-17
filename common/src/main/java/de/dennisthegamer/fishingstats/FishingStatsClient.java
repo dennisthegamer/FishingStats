@@ -149,6 +149,8 @@ public final class FishingStatsClient {
                                 .withStyle(style -> style.withColor(0xFFAA00))
                 );
             } else {
+                // Die Taste heisst "Session starten" und der Chat meldet es — also auch eine anlegen.
+                session.startIfNone(System.currentTimeMillis(), FishingTracker.dimensionId(client.level));
                 send(client.player,
                         Component.translatable("fishingstats.session.started")
                                 .withStyle(style -> style.withColor(0x55FF55))

@@ -54,11 +54,12 @@ public class FishingStatsHud {
         }
     }
 
-    /** " · 12:34" bzw. " · 12:34 ⏸" — leer, solange keine Session läuft. */
+    /** " · 12:34", " · 12:34 ⏸" oder " · keine Session" — nie leer. */
     private static String statusSuffix(HudState snapshot) {
-        if (snapshot.duration().isEmpty()) return "";
-        return " " + (char) 0x00B7 + " " + snapshot.duration()          // middle dot
-                + (snapshot.paused() ? " " + (char) 0x23F8 : "");       // pause glyph
+        String status = snapshot.duration().isEmpty()
+                ? I18n.get("fishingstats.hud.no_session")
+                : snapshot.duration() + (snapshot.paused() ? " " + (char) 0x23F8 : "");  // pause glyph
+        return " " + (char) 0x00B7 + " " + status;                                       // middle dot
     }
 
     // Die Session-Zeit hängt im Titel; kompakt gibt es keinen Titel, dort an der Stats-Zeile.
@@ -144,8 +145,14 @@ public class FishingStatsHud {
 
         HudState snapshot = state;
         boolean sessionActive = SessionManager.getInstance().getActiveSession() != null;
-        if (!config.hudVisibleAlways && !snapshot.fishingNow() && !sessionActive) return;
-        if (snapshot.casts() == 0 && !snapshot.fishingNow()) return;
+        // Der Schalter regiert BEIDE Ausstiege. Vorher fragte der zweite ihn nicht und versteckte
+        // das HUD vor dem ersten Auswurf (casts() == 0), obwohl "Immer sichtbar" an war.
+        if (!config.hudVisibleAlways) {
+            if (!snapshot.fishingNow() && !sessionActive) return;
+            // !fishingNow MUSS bleiben: sonst verschwaende das HUD bei Schalter-aus genau im
+            // Moment des ersten Auswurfs, weil casts() dann noch 0 ist.
+            if (snapshot.casts() == 0 && !snapshot.fishingNow()) return;
+        }
 
         Font font = client.font;
         float scale = config.hudScale;

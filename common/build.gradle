@@ -7,4 +7,25 @@ dependencies {
 	modCompileOnly "dev.architectury:architectury:${rootProject.architectury_version}"
 	// YACL for the config screen (client-only class, referenced from client entrypoints only)
 	modCompileOnly "dev.isxander:yet-another-config-lib:${rootProject.yacl_version}-fabric"
+	// hudlib-core: shared HUD position/color primitives (pure Java, no Minecraft refs).
+	// api, so fabric/neoforge (which depend on :common) see these types too.
+	api "de.dennisthegamer:hudlib-core:1.0.7"
+	// hudlib-ui: shared drag-editor/preset screens (Minecraft-referencing). modImplementation
+	// so loom remaps its MC references (named-mapped published jar) for common's dev compile.
+	modImplementation "de.dennisthegamer:hudlib-ui:1.0.7+mc1.21-1.21.8"
+}
+
+repositories {
+	mavenCentral()
+	mavenLocal()
+}
+
+dependencies {
+	testImplementation platform('org.junit:junit-bom:5.10.2')
+	testImplementation 'org.junit.jupiter:junit-jupiter'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+	useJUnitPlatform()
 }

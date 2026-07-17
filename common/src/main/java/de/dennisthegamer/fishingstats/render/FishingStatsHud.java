@@ -58,8 +58,14 @@ public class FishingStatsHud {
 
         HudState snapshot = state;
         boolean sessionActive = SessionManager.getInstance().getActiveSession() != null;
-        if (!config.hudVisibleAlways && !snapshot.fishingNow() && !sessionActive) return;
-        if (snapshot.casts() == 0 && !snapshot.fishingNow()) return;
+        // Der Schalter regiert BEIDE Ausstiege. Vorher fragte der zweite ihn nicht und versteckte
+        // das HUD vor dem ersten Auswurf (casts() == 0), obwohl "Immer sichtbar" an war.
+        if (!config.hudVisibleAlways) {
+            if (!snapshot.fishingNow() && !sessionActive) return;
+            // !fishingNow MUSS bleiben: sonst verschwaende das HUD bei Schalter-aus genau im
+            // Moment des ersten Auswurfs, weil casts() dann noch 0 ist.
+            if (snapshot.casts() == 0 && !snapshot.fishingNow()) return;
+        }
 
         Font font = client.font;
         float scale = config.hudScale;
@@ -77,14 +83,15 @@ public class FishingStatsHud {
 
         // Running session time in the title ("Name - 12:34"); compact appends it to the
         // stats line. Pause symbol (U+23F8) only while paused - no "active" text.
+        // Ohne Session steht dort "keine Session".
         var activeSession = SessionManager.getInstance().getActiveSession();
-        if (activeSession != null) {
-            String dot = " " + (char) 0x00B7 + " ";                                       // middle dot
-            String status = activeSession.formattedDuration()
-                    + (SessionManager.getInstance().isPaused() ? " " + (char) 0x23F8 : ""); // pause glyph
-            if (compact) castsLine = castsLine + dot + status;
-            else title = title + dot + status;
-        }
+        String dot = " " + (char) 0x00B7 + " ";                                           // middle dot
+        String status = activeSession != null
+                ? activeSession.formattedDuration()
+                        + (SessionManager.getInstance().isPaused() ? " " + (char) 0x23F8 : "") // pause glyph
+                : I18n.get("fishingstats.hud.no_session");
+        if (compact) castsLine = castsLine + dot + status;
+        else title = title + dot + status;
 
         int lineHeight = font.lineHeight + 2;
         boolean hasCatchIcon = !compact && !snapshot.lastCatch().isEmpty();

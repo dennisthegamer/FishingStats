@@ -2,7 +2,13 @@ plugins { id 'com.gradleup.shadow' }
 
 architectury { platformSetupLoomIde(); fabric() }
 
-repositories { mavenLocal() }
+repositories {
+	mavenLocal()
+	maven {
+		name = 'DennisTheGamer'
+		url = 'https://dennisthegamer.github.io/maven'
+	}
+}
 
 configurations {
 	common

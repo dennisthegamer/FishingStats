@@ -55,10 +55,10 @@ dependencies {
 	implementation "maven.modrinth:yacl:${project.yacl_version}-neoforge"
 
 	// HudLib (mavenLocal, jar-in-jar via NeoForge JarJar)
-	implementation "de.dennisthegamer:hudlib-core:1.1.0"
-	jarJar "de.dennisthegamer:hudlib-core:1.1.0"
-	implementation "de.dennisthegamer:hudlib-ui-neoforge:1.1.0+mc${project.minecraft_range}"
-	jarJar "de.dennisthegamer:hudlib-ui-neoforge:1.1.0+mc${project.minecraft_range}"
+	implementation "de.dennisthegamer:hudlib-core:1.1.1"
+	jarJar "de.dennisthegamer:hudlib-core:1.1.1"
+	implementation "de.dennisthegamer:hudlib-ui-neoforge:1.1.1+mc${project.minecraft_range}"
+	jarJar "de.dennisthegamer:hudlib-ui-neoforge:1.1.1+mc${project.minecraft_range}"
 }
 
 processResources {

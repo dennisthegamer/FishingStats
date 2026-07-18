@@ -3,6 +3,7 @@ package de.dennisthegamer.fishingstats.neoforge;
 import de.dennisthegamer.fishingstats.FishingStatsClient;
 import de.dennisthegamer.fishingstats.config.FishingStatsConfigScreen;
 import de.dennisthegamer.fishingstats.render.FishingStatsHud;
+import de.dennisthegamer.hudlib.neoforge.HudLibNeoForge;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
@@ -14,7 +15,6 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
-import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.neoforged.neoforge.common.NeoForge;
 
 /** NeoForge client entrypoint - wiring only, all logic lives in the shared sources. */
@@ -32,9 +32,9 @@ public final class FishingStatsNeoForge {
             event.register(FishingStatsClient.SESSION_TOGGLE_KEY);
         });
 
-        // Register HUD renderer
-        modBus.addListener((RegisterGuiLayersEvent event) -> event.registerAbove(
-                VanillaGuiLayers.BOSS_OVERLAY,
+        // Register HUD renderer (HudLib kapselt registerAbove/BOSS_OVERLAY)
+        modBus.addListener((RegisterGuiLayersEvent event) -> HudLibNeoForge.register(
+                event,
                 Identifier.fromNamespaceAndPath(FishingStatsClient.MOD_ID, "hud"),
                 FishingStatsHud::render
         ));

@@ -115,6 +115,9 @@ public class FishingStatsConfig {
     }
 
     public HudPosition getHudPosition() {
+        if (hudPosition == null) {
+            return HudPosition.TOP_LEFT;
+        }
         try {
             return HudPosition.valueOf(hudPosition);
         } catch (IllegalArgumentException e) {

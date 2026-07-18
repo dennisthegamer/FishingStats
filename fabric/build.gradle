@@ -11,6 +11,8 @@ base {
 }
 
 repositories {
+	mavenLocal()
+
 	mavenCentral()
 
 	maven {
@@ -45,6 +47,12 @@ dependencies {
 
 	// YACL for configuration screens (Fabric classifier)
 	implementation "maven.modrinth:yacl:${project.yacl_version}-fabric"
+
+	// HudLib (mavenLocal, jar-in-jar)
+	implementation "de.dennisthegamer:hudlib-core:1.1.1"
+	include "de.dennisthegamer:hudlib-core:1.1.1"
+	implementation "de.dennisthegamer:hudlib-ui:1.1.1+mc26.1"
+	include "de.dennisthegamer:hudlib-ui:1.1.1+mc26.1"
 }
 
 loom {

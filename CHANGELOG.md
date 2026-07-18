@@ -5,6 +5,25 @@ All notable changes to FishingStats will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-07-18
+
+### Changed
+- Updated the bundled HudLib to 1.1.1 (more robust HUD drawing, clamped opacity)
+
+## [1.2.0] - 2026-07-18
+
+### Added
+- **Freely positionable HUD**: the config screen has a new "Edit HUD Position..." button that
+  opens an editor - drag the HUD anywhere on screen and confirm
+- **Position presets**: save, apply, rename and delete HUD positions
+- HudLib is bundled inside the jar (jar-in-jar); there is nothing extra to install
+
+### Changed
+- The HUD is no longer limited to the four screen corners. An existing `hudPosition`
+  setting is migrated automatically to the same spot; the obsolete field disappears from
+  the config file on the next save
+- HUD drawing and the catch flash now come from the shared HudLib instead of mod-local code
+
 ## [1.1.0] - 2026-07-14
 
 ### Added

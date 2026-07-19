@@ -101,6 +101,9 @@ public abstract class FishingStatsTabScreen extends Screen {
     /** Shortens a label to the given pixel width, appending an ellipsis when it does not fit. */
     private String trimToWidth(String label, int maxWidth) {
         if (font.width(label) <= maxWidth) return label;
+        // Even a bare ellipsis does not fit the budget: there is no non-empty result that
+        // stays within maxWidth, so fall back to the empty string rather than overshoot it.
+        if (font.width("…") > maxWidth) return "";
         StringBuilder sb = new StringBuilder();
         for (char c : label.toCharArray()) {
             if (font.width(sb.toString() + c + "…") > maxWidth) break;
@@ -120,13 +123,18 @@ public abstract class FishingStatsTabScreen extends Screen {
 
     /** Scrolls the active entry into view; call from init() when sub-entries exist. */
     protected void revealActiveSidebarEntry() {
+        // Same reference point layoutRows() uses for a row's top: the content origin
+        // (HEADER_HEIGHT + PADDING) minus the row's own "- 2" padding. Comparing row.top()
+        // against the unpadded origin made the first row look scrolled-off at rest.
+        int topBound = HEADER_HEIGHT + PADDING - 2;
         for (SidebarRow row : layoutRows()) {
             if (!row.entry().active()) continue;
-            if (row.top() < HEADER_HEIGHT + PADDING) {
-                sidebarScroll -= HEADER_HEIGHT + PADDING - row.top();
+            if (row.top() < topBound) {
+                sidebarScroll -= topBound - row.top();
             } else if (row.bottom() > height) {
                 sidebarScroll += row.bottom() - height;
             }
+            sidebarScroll = Math.max(0, sidebarScroll);
             return;
         }
     }

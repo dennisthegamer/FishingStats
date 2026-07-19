@@ -75,11 +75,23 @@ public abstract class FishingStatsTabScreen extends Screen {
     private List<SidebarEntry> sidebarEntries() {
         List<SidebarEntry> entries = new ArrayList<>();
         for (Tab t : Tab.values()) {
+            List<SidebarEntry> subs = subEntries(t);
+            boolean showsSubEntries = !subs.isEmpty();
             entries.add(new SidebarEntry(label(t), 0, t == tab && !hasActiveSubEntry(),
                     () -> {
-                        if (t != tab) Minecraft.getInstance().gui.setScreen(createScreen(t));
+                        // Fires on a genuine tab switch, or when this screen is a subordinate
+                        // view of its own tab (hasActiveSubEntry(), e.g. a session detail
+                        // screen) - without that, "Sessions" was a dead click from the detail
+                        // view. showsSubEntries additionally covers the case where the viewed
+                        // session was deleted out from under the screen: hasActiveSubEntry()
+                        // then reports false (no child left to highlight, so the parent row
+                        // takes the highlight instead) but sibling sessions are still listed
+                        // here, so the click must still be able to leave this screen.
+                        if (t != tab || hasActiveSubEntry() || showsSubEntries) {
+                            Minecraft.getInstance().gui.setScreen(createScreen(t));
+                        }
                     }));
-            entries.addAll(subEntries(t));
+            entries.addAll(subs);
         }
         return entries;
     }

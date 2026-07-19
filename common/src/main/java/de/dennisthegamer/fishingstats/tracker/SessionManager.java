@@ -163,6 +163,21 @@ public class SessionManager {
     }
 
     /**
+     * Deletes any session by id. Deleting the session that is currently being tracked
+     * also clears the active reference and pauses tracking - otherwise the tracker would
+     * keep booking casts and catches into a session that no longer exists in the store,
+     * and every save would silently drop them.
+     */
+    public boolean deleteSession(int id) {
+        if (active != null && active.id == id) {
+            paused = true;
+            active = null;
+            FishingStatsClient.LOGGER.info("Fishing session #{} deleted (was active)", id);
+        }
+        return FishingDataStore.getInstance().deleteSession(id);
+    }
+
+    /**
      * Discards the active session entirely (its casts and catches are deleted) and
      * pauses tracking again - the FishingStats window's "[R] reset" action.
      */
@@ -170,8 +185,7 @@ public class SessionManager {
         paused = true;
         if (active == null) return;
         FishingStatsClient.LOGGER.info("Fishing session #{} reset (discarded)", active.id);
-        FishingDataStore.getInstance().removeSession(active);
-        active = null;
+        deleteSession(active.id);
     }
 
     /** Ends the active session (inactivity, world leave or disconnect). */

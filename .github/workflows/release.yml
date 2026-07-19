@@ -16,6 +16,7 @@ jobs:
       mod_version: ${{ steps.version.outputs.mod_version }}
       minecraft_version: ${{ steps.version.outputs.minecraft_version }}
       minecraft_range: ${{ steps.version.outputs.minecraft_range }}
+      minecraft_range_neoforge: ${{ steps.version.outputs.minecraft_range_neoforge }}
       fabric_api_version: ${{ steps.version.outputs.fabric_api_version }}
       loader_version: ${{ steps.version.outputs.loader_version }}
     steps:
@@ -30,6 +31,10 @@ jobs:
           # Branches that support a version range set minecraft_range; fall back to the build version
           MC_RANGE=$(grep '^minecraft_range=' gradle.properties | cut -d'=' -f2)
           MC_RANGE=${MC_RANGE:-$MC_VERSION}
+          # NeoForge kann eine engere Range haben (26.1-Band: erst ab 26.1.2);
+          # Branches ohne eigene Angabe nutzen die gemeinsame
+          MC_RANGE_NEO=$(grep '^minecraft_range_neoforge=' gradle.properties | cut -d'=' -f2)
+          MC_RANGE_NEO=${MC_RANGE_NEO:-$MC_RANGE}
           # The Fabric API property is named fabric_api_version on 26.2+ branches
           # and fabric_version on 26.1 - accept both
           FABRIC_VERSION=$(grep -E '^fabric(_api)?_version=' gradle.properties | head -1 | cut -d'=' -f2)
@@ -37,6 +42,7 @@ jobs:
           echo "mod_version=$VERSION" >> $GITHUB_OUTPUT
           echo "minecraft_version=$MC_VERSION" >> $GITHUB_OUTPUT
           echo "minecraft_range=$MC_RANGE" >> $GITHUB_OUTPUT
+          echo "minecraft_range_neoforge=$MC_RANGE_NEO" >> $GITHUB_OUTPUT
           echo "fabric_api_version=$FABRIC_VERSION" >> $GITHUB_OUTPUT
           echo "loader_version=$LOADER_VERSION" >> $GITHUB_OUTPUT
           echo "Extracted versions: mod=$VERSION, minecraft=$MC_VERSION, fabric=$FABRIC_VERSION, loader=$LOADER_VERSION"
@@ -134,8 +140,9 @@ jobs:
 
           ## Build Artifacts
 
-          - `fishingstats-mc${{ needs.build.outputs.minecraft_range }}-${{ needs.build.outputs.mod_version }}.jar` - Main mod file (download this)
-          - `fishingstats-mc${{ needs.build.outputs.minecraft_range }}-${{ needs.build.outputs.mod_version }}-sources.jar` - Source code
+          - `fishingstats-fabric-${{ needs.build.outputs.mod_version }}+mc${{ needs.build.outputs.minecraft_range }}.jar` - Fabric mod file
+          - `fishingstats-neoforge-${{ needs.build.outputs.mod_version }}+mc${{ needs.build.outputs.minecraft_range_neoforge }}.jar` - NeoForge mod file
+          - `*-sources.jar` - Source code
 
           ## Recent Commits
 

@@ -1,7 +1,10 @@
 package de.dennisthegamer.fishingstats.config;
 
+import de.dennisthegamer.fishingstats.hud.FishingStatsHudBox;
+import de.dennisthegamer.fishingstats.hud.FishingStatsSlotStore;
 import dev.isxander.yacl3.api.*;
 import dev.isxander.yacl3.api.controller.*;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -35,13 +38,15 @@ public class FishingStatsConfigScreen {
                         .binding(defaults.hudCompact, () -> config.hudCompact, v -> config.hudCompact = v)
                         .controller(TickBoxControllerBuilder::create)
                         .build())
-                .option(Option.<FishingStatsConfig.HudPosition>createBuilder()
-                        .name(Component.translatable("config.fishingstats.hud_position"))
-                        .description(OptionDescription.of(Component.translatable("config.fishingstats.hud_position.tooltip")))
-                        .binding(defaults.getHudPosition(), config::getHudPosition, v -> config.hudPosition = v.name())
-                        .controller(opt -> EnumControllerBuilder.create(opt)
-                                .enumClass(FishingStatsConfig.HudPosition.class)
-                                .formatValue(FishingStatsConfigScreen::positionName))
+                .option(ButtonOption.createBuilder()
+                        .name(Component.translatable("config.fishingstats.hud_edit"))
+                        .description(OptionDescription.of(Component.translatable("config.fishingstats.hud_edit.tooltip")))
+                        .action((yaclScreen, opt) -> {
+                            FishingStatsConfig cfg = FishingStatsConfig.getInstance();
+                            Minecraft.getInstance().setScreen(new de.dennisthegamer.hudlib.ui.HudEditorScreen(
+                                    yaclScreen, new FishingStatsHudBox(), new FishingStatsSlotStore(),
+                                    () -> cfg.hudPlacement, p -> { cfg.hudPlacement = p; cfg.save(); }));
+                        })
                         .build())
                 .option(Option.<Boolean>createBuilder()
                         .name(Component.translatable("config.fishingstats.hud_visible_always"))
@@ -98,10 +103,5 @@ public class FishingStatsConfigScreen {
                         .controller(TickBoxControllerBuilder::create)
                         .build())
                 .build();
-    }
-
-    private static Component positionName(FishingStatsConfig.HudPosition position) {
-        return Component.translatable("config.fishingstats.position."
-                + position.name().toLowerCase(java.util.Locale.ROOT));
     }
 }

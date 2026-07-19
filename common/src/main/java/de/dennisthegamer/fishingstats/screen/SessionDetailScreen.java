@@ -62,6 +62,13 @@ public class SessionDetailScreen extends FishingStatsTabScreen {
     }
 
     @Override
+    protected boolean isSubordinateView() {
+        // Always a subordinate view of Tab.SESSIONS, whether or not the session it shows
+        // still exists - clicking "Sessions" from here must always return to the list.
+        return true;
+    }
+
+    @Override
     protected List<SidebarEntry> subEntries(Tab parentTab) {
         if (parentTab != Tab.SESSIONS) return List.of();
         List<SidebarEntry> entries = new ArrayList<>();

@@ -22,9 +22,9 @@ import java.util.Map;
  * Detail view of one session (plan section 3.2): header facts, fish/treasure/junk bar
  * and the catch list aggregated by category with real item icons instead of plain text.
  */
-public class SessionDetailScreen extends Screen {
+public class SessionDetailScreen extends FishingStatsTabScreen {
 
-    private static final int PADDING = 6;
+    // PADDING is inherited from FishingStatsTabScreen
     private static final int BAR_HEIGHT = 12;
     private static final int ROW_HEIGHT = 20;
 
@@ -32,9 +32,15 @@ public class SessionDetailScreen extends Screen {
     private final Screen parent;
 
     public SessionDetailScreen(int sessionId, Screen parent) {
-        super(Component.translatable("fishingstats.detail.title"));
+        super(Component.translatable("fishingstats.detail.title"), Tab.SESSIONS);
         this.sessionId = sessionId;
         this.parent = parent;
+    }
+
+    @Override
+    protected void init() {
+        super.init();
+        revealActiveSidebarEntry();
     }
 
     private FishingSession session() {
@@ -45,100 +51,139 @@ public class SessionDetailScreen extends Screen {
     }
 
     @Override
+    protected boolean hasActiveSubEntry() {
+        // False once the viewed session was deleted out from under this screen: no
+        // sub-entry matches sessionId anymore, so the parent "Sessions" row should take
+        // the highlight instead of nothing being highlighted at all.
+        return session() != null;
+    }
+
+    @Override
+    protected boolean isSubordinateView() {
+        // Always a subordinate view of Tab.SESSIONS, whether or not the session it shows
+        // still exists - clicking "Sessions" from here must always return to the list.
+        return true;
+    }
+
+    @Override
+    protected List<SidebarEntry> subEntries(Tab parentTab) {
+        if (parentTab != Tab.SESSIONS) return List.of();
+        List<SidebarEntry> entries = new ArrayList<>();
+        for (FishingSession s : FishingDataStore.getInstance().getSessionsNewestFirst()) {
+            int id = s.id;
+            String label = "#" + id + " " + StatsFormat.dateTimeShort(s.startTime);
+            entries.add(new SidebarEntry(label, 1, id == sessionId, () -> {
+                if (id != sessionId) {
+                    Minecraft.getInstance().setScreen(new SessionDetailScreen(id, parent));
+                }
+            }));
+        }
+        return entries;
+    }
+
+    @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
         super.render(graphics, mouseX, mouseY, delta);
 
         Font font = this.font;
         int lineHeight = font.lineHeight + 4;
-        graphics.fill(0, 0, width, height, 0xCC000000);
 
         FishingSession session = session();
+        renderHeader(graphics, "fishingstats.detail.title");
+        renderSidebar(graphics, mouseX, mouseY);
+
+        int cx = contentX() + PADDING;
+        String backHint = I18n.get("fishingstats.detail.back");
+        graphics.drawString(font, backHint, width - font.width(backHint) - PADDING, 10, 0xFFAAAAAA, true);
+
         if (session == null) {
-            graphics.drawString(font, I18n.get("fishingstats.detail.gone"), PADDING, PADDING, 0xFFFF5555, true);
+            graphics.drawString(font, I18n.get("fishingstats.detail.gone"),
+                    cx, HEADER_HEIGHT + PADDING, 0xFFFF5555, true);
             return;
         }
 
-        // === Header ===
-        String title = I18n.get("fishingstats.detail.header", StatsFormat.dateTime(session.startTime));
-        graphics.drawString(font, title, (width - font.width(title)) / 2, PADDING, 0xFFFFD700, true);
-        String backHint = I18n.get("fishingstats.detail.back");
-        graphics.drawString(font, backHint, width - font.width(backHint) - PADDING, PADDING, 0xFFAAAAAA, true);
+        int y = HEADER_HEIGHT + PADDING;
+        String subtitle = I18n.get("fishingstats.detail.header", StatsFormat.dateTime(session.startTime));
+        graphics.drawString(font, subtitle, cx, y, 0xFFFFD700, true);
+        y += lineHeight;
 
-        int y = PADDING + lineHeight + 4;
         String timeRange = session.isActive()
                 ? I18n.get("fishingstats.detail.running", StatsFormat.time(session.startTime), session.formattedDuration())
                 : I18n.get("fishingstats.detail.timerange",
                         StatsFormat.time(session.startTime), StatsFormat.time(session.endTime), session.formattedDuration());
-        graphics.drawString(font, timeRange, PADDING, y, 0xFFFFFFFF, true);
+        graphics.drawString(font, timeRange, cx, y, 0xFFFFFFFF, true);
         y += lineHeight;
 
         String where = I18n.get("fishingstats.detail.where",
                 StatsFormat.prettyId(session.biomePrimary.isEmpty() ? "?" : session.biomePrimary),
                 StatsFormat.prettyId(session.dimension));
-        graphics.drawString(font, where, PADDING, y, 0xFFAAAAAA, true);
+        graphics.drawString(font, where, cx, y, 0xFFAAAAAA, true);
         y += lineHeight;
 
         String casts = I18n.get("fishingstats.detail.casts", session.totalCasts, session.catches.size());
-        graphics.drawString(font, casts, PADDING, y, 0xFFAAAAAA, true);
+        graphics.drawString(font, casts, cx, y, 0xFFAAAAAA, true);
         y += lineHeight + 4;
 
         // === Stacked rarity bar: fish / treasure / junk ===
-        y = renderRarityBar(graphics, font, session, y, lineHeight);
+        y = renderRarityBar(graphics, font, session, y, lineHeight, cx);
         y += 6;
 
         // === Aggregated catch list with item icons ===
-        graphics.drawString(font, I18n.get("fishingstats.detail.catches"), PADDING, y, 0xFFFFD700, true);
+        graphics.drawString(font, I18n.get("fishingstats.detail.catches"), cx, y, 0xFFFFD700, true);
         y += lineHeight;
 
         for (DisplayRow row : buildRows(session)) {
             if (y + ROW_HEIGHT > height) break;
 
-            boolean hovered = mouseY >= y && mouseY < y + ROW_HEIGHT && mouseX < width / 2;
+            boolean hovered = mouseY >= y && mouseY < y + ROW_HEIGHT
+                    && mouseX >= contentX() && mouseX < contentX() + (width - contentX()) / 2;
             if (hovered) {
-                graphics.fill(0, y, width / 2, y + ROW_HEIGHT, 0x22FFFFFF);
+                graphics.fill(contentX(), y, contentX() + (width - contentX()) / 2, y + ROW_HEIGHT, 0x22FFFFFF);
                 if (row.tooltipCategory != null) {
                     graphics.setComponentTooltipForNextFrame(font,
                             breakdownTooltip(session, row.tooltipCategory), mouseX, mouseY);
                 }
             }
 
-            graphics.renderItem(row.icon, PADDING, y + 2);
-            graphics.drawString(font, row.label, PADDING + 22, y + 6, 0xFFFFFFFF, true);
+            graphics.renderItem(row.icon, cx, y + 2);
+            graphics.drawString(font, row.label, cx + 22, y + 6, 0xFFFFFFFF, true);
             String amount = "×" + row.count;
-            graphics.drawString(font, amount, width / 2 - font.width(amount) - PADDING, y + 6, 0xFFFFD700, true);
+            graphics.drawString(font, amount,
+                    contentX() + (width - contentX()) / 2 - font.width(amount) - PADDING, y + 6,
+                    0xFFFFD700, true);
             y += ROW_HEIGHT;
         }
 
         if (session.catches.isEmpty()) {
-            graphics.drawString(font, I18n.get("fishingstats.detail.no_catches"), PADDING, y, 0xFFAAAAAA, true);
+            graphics.drawString(font, I18n.get("fishingstats.detail.no_catches"), cx, y, 0xFFAAAAAA, true);
         }
     }
 
     private int renderRarityBar(GuiGraphics graphics, Font font, FishingSession session,
-                                int y, int lineHeight) {
+                                int y, int lineHeight, int cx) {
         int total = session.catches.size();
-        int barWidth = width - PADDING * 2;
+        int barWidth = width - cx - PADDING;
 
         int fish = session.countByRarity("fish");
         int treasure = session.countByRarity("treasure");
         int junk = total - fish - treasure;
 
-        graphics.fill(PADDING, y, PADDING + barWidth, y + BAR_HEIGHT, 0xFF333333);
+        graphics.fill(cx, y, cx + barWidth, y + BAR_HEIGHT, 0xFF333333);
         if (total > 0) {
             int fishW = Math.round(barWidth * (float) fish / total);
             int treasureW = Math.round(barWidth * (float) treasure / total);
-            int x = PADDING;
+            int x = cx;
             graphics.fill(x, y, x + fishW, y + BAR_HEIGHT, 0xFF55AAFF);
             x += fishW;
             graphics.fill(x, y, x + treasureW, y + BAR_HEIGHT, 0xFFFFD700);
             x += treasureW;
-            graphics.fill(x, y, PADDING + barWidth, y + BAR_HEIGHT, 0xFF888888);
+            graphics.fill(x, y, cx + barWidth, y + BAR_HEIGHT, 0xFF888888);
         }
         y += BAR_HEIGHT + 3;
 
         String legend = I18n.get("fishingstats.detail.legend",
                 percent(fish, total), percent(treasure, total), percent(junk, total));
-        graphics.drawString(font, legend, PADDING, y, 0xFFAAAAAA, true);
+        graphics.drawString(font, legend, cx, y, 0xFFAAAAAA, true);
         return y + lineHeight;
     }
 
@@ -202,16 +247,22 @@ public class SessionDetailScreen extends Screen {
     }
 
     @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (handleSidebarClick(mouseX, mouseY, button)) return true;
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        return handleSidebarScroll(mouseX, scrollY);
+    }
+
+    @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
             Minecraft.getInstance().setScreen(parent);
             return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);
-    }
-
-    @Override
-    public boolean isPauseScreen() {
-        return false;
     }
 }

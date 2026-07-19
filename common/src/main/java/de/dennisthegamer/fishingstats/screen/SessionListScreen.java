@@ -181,6 +181,7 @@ public class SessionListScreen extends FishingStatsTabScreen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (handleSidebarScroll(mouseX, scrollY)) return true;
         int size = FishingDataStore.getInstance().getSessions().size();
         scrollOffset = Math.max(0, Math.min(scrollOffset - (int) scrollY, Math.max(0, size - 3)));
         return true;

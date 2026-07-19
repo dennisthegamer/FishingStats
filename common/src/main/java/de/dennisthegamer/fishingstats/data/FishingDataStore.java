@@ -59,6 +59,17 @@ public class FishingDataStore {
         saveToDisk();
     }
 
+    /**
+     * Removes the session with this id permanently. Unlike removeSession this does not
+     * need the instance, so the UI can delete any session it only knows by id.
+     * Returns false if no session with that id exists.
+     */
+    public boolean deleteSession(int id) {
+        boolean removed = sessions.removeIf(s -> s.id == id);
+        if (removed) saveToDisk();
+        return removed;
+    }
+
     private int nextId() {
         int max = 0;
         for (FishingSession s : sessions) max = Math.max(max, s.id);

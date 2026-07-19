@@ -17,6 +17,9 @@
 	"fishingstats.sessions.active": "(aktiv)",
 	"fishingstats.sessions.reset": "[R] Session zurücksetzen",
 	"fishingstats.sessions.reset_confirm": "Session zurückgesetzt!",
+	"fishingstats.sessions.delete_arm": "Zum Löschen erneut auf das Kreuz klicken",
+	"fishingstats.sessions.deleted": "Session #%d gelöscht",
+	"fishingstats.sessions.delete_tooltip": "Session löschen",
 	"fishingstats.sessions.stats": "%d Fänge · %d%% Schätze",
 
 	"fishingstats.detail.title": "Session-Details",

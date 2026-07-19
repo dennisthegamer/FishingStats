@@ -5,6 +5,17 @@ All notable changes to FishingStats will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-07-19
+
+### Added
+- **Freely movable HUD** on Minecraft 1.21–1.21.5 as well: drag the HUD panel
+  anywhere and save named position presets. This was the last jar still limited
+  to the four screen corners — every other version already had it. HudLib is
+  bundled inside the jar, there is nothing extra to install.
+
+### Changed
+- An existing `hudPosition` setting is migrated automatically to the same spot
+
 ## [1.1.0] - 2026-07-14
 
 ### Added

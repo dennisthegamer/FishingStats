@@ -17,6 +17,9 @@
 	"fishingstats.sessions.active": "(active)",
 	"fishingstats.sessions.reset": "[R] Reset Session",
 	"fishingstats.sessions.reset_confirm": "Session reset!",
+	"fishingstats.sessions.delete_arm": "Click the cross again to delete this session",
+	"fishingstats.sessions.deleted": "Session #%d deleted",
+	"fishingstats.sessions.delete_tooltip": "Delete session",
 	"fishingstats.sessions.stats": "%d catches · %d%% treasure",
 
 	"fishingstats.detail.title": "Session Details",

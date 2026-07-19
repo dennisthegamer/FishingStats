@@ -22,6 +22,13 @@ public class SessionListScreen extends FishingStatsTabScreen {
 
     private int scrollOffset = 0;
 
+    /** Minimum width of the click target on the right of each row that deletes the session,
+     *  so the hitbox never becomes tiny even if the glyph itself were narrower than this. */
+    private static final int MIN_DELETE_COLUMN = 14;
+
+    /** Id of the session whose delete cross is armed; -1 when nothing is armed. */
+    private int pendingDeleteId = -1;
+
     // Status message for reset feedback
     private String statusMessage;
     private int statusMessageTicks;
@@ -35,11 +42,25 @@ public class SessionListScreen extends FishingStatsTabScreen {
     }
 
     private int listStartY() {
-        int y = HEADER_HEIGHT + PADDING;
-        if (statusMessage != null && statusMessageTicks > 0) {
-            y += font.lineHeight + 4;
-        }
-        return y;
+        // The status line is reserved unconditionally: if the row offset changed when a
+        // message appears, arming a delete would shift every row down and the confirming
+        // second click would land on the neighbouring session.
+        return HEADER_HEIGHT + PADDING + font.lineHeight + 4;
+    }
+
+    /** True when a row starting at entryY is fully drawn by render (which breaks the render
+     *  loop once a row's bottom would exceed the screen). Clicks are bound by the same check
+     *  so the leftover strip below the last visible row can never resolve to the next,
+     *  undrawn session. */
+    private boolean rowFullyVisible(int entryY, int entryHeight) {
+        return entryY + entryHeight <= height;
+    }
+
+    /** Width of the click target on the right of each row that deletes the session. Derived
+     *  from the same glyph measurement the drawing uses (width - PADDING - font.width("✕")),
+     *  so a wider "✕" under Force Unicode Font can never extend past its own hitbox. */
+    private int deleteColumnWidth() {
+        return Math.max(MIN_DELETE_COLUMN, font.width("✕") + PADDING);
     }
 
     @Override
@@ -68,6 +89,7 @@ public class SessionListScreen extends FishingStatsTabScreen {
         int contentX = contentX();
         int listY = listStartY();
         int entryHeight = entryHeight();
+        int deleteColumn = deleteColumnWidth();
 
         if (sessions.isEmpty()) {
             String empty = I18n.get("fishingstats.sessions.empty");
@@ -78,7 +100,7 @@ public class SessionListScreen extends FishingStatsTabScreen {
 
         for (int i = scrollOffset; i < sessions.size(); i++) {
             int entryY = listY + (i - scrollOffset) * entryHeight;
-            if (entryY + entryHeight > height) break;
+            if (!rowFullyVisible(entryY, entryHeight)) break;
 
             FishingSession session = sessions.get(i);
             boolean hovered = mouseX >= contentX && mouseY >= entryY && mouseY < entryY + entryHeight;
@@ -95,7 +117,8 @@ public class SessionListScreen extends FishingStatsTabScreen {
             graphics.drawString(font, date, contentX + PADDING, entryY + 3,
                     session.isActive() ? 0xFF55FF55 : TEXT_COLOR, true);
             String duration = session.formattedDuration();
-            graphics.drawString(font, duration, width - font.width(duration) - PADDING, entryY + 3, MUTED_COLOR, true);
+            graphics.drawString(font, duration, width - font.width(duration) - PADDING - deleteColumn,
+                    entryY + 3, MUTED_COLOR, true);
 
             // Line 2: biome · dimension ..... catches + treasure share
             String where = StatsFormat.prettyId(session.biomePrimary.isEmpty() ? "?" : session.biomePrimary)
@@ -103,25 +126,60 @@ public class SessionListScreen extends FishingStatsTabScreen {
             graphics.drawString(font, where, contentX + PADDING, entryY + 3 + lineHeight, MUTED_COLOR, true);
             String stats = I18n.get("fishingstats.sessions.stats",
                     session.catches.size(), session.treasurePercent());
-            graphics.drawString(font, stats, width - font.width(stats) - PADDING, entryY + 3 + lineHeight,
+            graphics.drawString(font, stats, width - font.width(stats) - PADDING - deleteColumn,
+                    entryY + 3 + lineHeight,
                     session.treasurePercent() > 0 ? TREASURE_COLOR : MUTED_COLOR, true);
+
+            // Delete cross, vertically centred in the row
+            boolean armed = session.id == pendingDeleteId;
+            String cross = "✕";
+            int crossX = width - PADDING - font.width(cross);
+            int crossY = entryY + (entryHeight - font.lineHeight) / 2;
+            boolean crossHovered = mouseX >= width - PADDING - deleteColumn
+                    && mouseY >= entryY && mouseY < entryY + entryHeight;
+            graphics.drawString(font, cross, crossX, crossY,
+                    armed ? 0xFFFF5555 : (crossHovered ? 0xFFFFFFFF : MUTED_COLOR), true);
         }
     }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent click, boolean doubled) {
-        if (handleSidebarClick(click)) return true;
-        if (click.button() != 0) return super.mouseClicked(click, doubled);
+        if (handleSidebarClick(click)) {
+            pendingDeleteId = -1;
+            return true;
+        }
+        if (click.button() != 0) {
+            pendingDeleteId = -1;
+            return super.mouseClicked(click, doubled);
+        }
 
         int listY = listStartY();
         if (click.y() >= listY && click.x() >= contentX()) {
-            int index = (int) ((click.y() - listY) / entryHeight()) + scrollOffset;
+            int entryHeight = entryHeight();
+            int index = (int) ((click.y() - listY) / entryHeight) + scrollOffset;
+            int entryY = listY + (index - scrollOffset) * entryHeight;
             List<FishingSession> sessions = FishingDataStore.getInstance().getSessionsNewestFirst();
-            if (index >= 0 && index < sessions.size()) {
-                Minecraft.getInstance().setScreen(new SessionDetailScreen(sessions.get(index).id, this));
+            if (index >= 0 && index < sessions.size() && rowFullyVisible(entryY, entryHeight)) {
+                FishingSession session = sessions.get(index);
+                if (click.x() >= width - PADDING - deleteColumnWidth()) {
+                    if (pendingDeleteId == session.id) {
+                        SessionManager.getInstance().deleteSession(session.id);
+                        pendingDeleteId = -1;
+                        scrollOffset = 0;
+                        statusMessage = I18n.get("fishingstats.sessions.deleted", session.id);
+                    } else {
+                        pendingDeleteId = session.id;
+                        statusMessage = I18n.get("fishingstats.sessions.delete_arm");
+                    }
+                    statusMessageTicks = 100;
+                    return true;
+                }
+                pendingDeleteId = -1;
+                Minecraft.getInstance().setScreen(new SessionDetailScreen(session.id, this));
                 return true;
             }
         }
+        pendingDeleteId = -1;
         return super.mouseClicked(click, doubled);
     }
 
@@ -140,6 +198,7 @@ public class SessionListScreen extends FishingStatsTabScreen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (handleSidebarScroll(mouseX, scrollY)) return true;
         int size = FishingDataStore.getInstance().getSessions().size();
         scrollOffset = Math.max(0, Math.min(scrollOffset - (int) scrollY, Math.max(0, size - 3)));
         return true;

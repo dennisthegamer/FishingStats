@@ -263,6 +263,7 @@ public class OverallStatsScreen extends FishingStatsTabScreen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (handleSidebarScroll(mouseX, scrollY)) return true;
         int maxScroll = Math.max(0, contentHeight - (height - HEADER_HEIGHT) + PADDING * 2);
         scrollOffset = Math.max(0, Math.min(scrollOffset - (int) (scrollY * 12), maxScroll));
         return true;

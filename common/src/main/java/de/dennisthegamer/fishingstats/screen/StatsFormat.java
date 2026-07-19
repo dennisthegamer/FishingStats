@@ -3,6 +3,7 @@ package de.dennisthegamer.fishingstats.screen;
 import net.minecraft.client.gui.Font;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
@@ -13,6 +14,8 @@ public final class StatsFormat {
             DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm").withZone(ZoneId.systemDefault());
     private static final DateTimeFormatter TIME_ONLY =
             DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault());
+    private static final DateTimeFormatter DATE_SHORT =
+            DateTimeFormatter.ofPattern("dd.MM.").withZone(ZoneId.systemDefault());
 
     private StatsFormat() {}
 
@@ -22,6 +25,14 @@ public final class StatsFormat {
 
     public static String time(long epochMs) {
         return TIME_ONLY.format(Instant.ofEpochMilli(epochMs));
+    }
+
+    /** Compact form for tight spaces (e.g. the sidebar): "HH:mm" for today, "dd.MM." otherwise. */
+    public static String dateTimeShort(long epochMs) {
+        ZoneId zone = ZoneId.systemDefault();
+        Instant instant = Instant.ofEpochMilli(epochMs);
+        boolean isToday = LocalDate.now(zone).equals(instant.atZone(zone).toLocalDate());
+        return isToday ? TIME_ONLY.format(instant) : DATE_SHORT.format(instant);
     }
 
     /** "minecraft:frozen_ocean" -> "Frozen Ocean" */

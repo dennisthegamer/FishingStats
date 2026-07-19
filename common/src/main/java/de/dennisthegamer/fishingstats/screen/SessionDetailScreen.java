@@ -55,7 +55,10 @@ public class SessionDetailScreen extends FishingStatsTabScreen {
 
     @Override
     protected boolean hasActiveSubEntry() {
-        return true;
+        // False once the viewed session was deleted out from under this screen: no
+        // sub-entry matches sessionId anymore, so the parent "Sessions" row should take
+        // the highlight instead of nothing being highlighted at all.
+        return session() != null;
     }
 
     @Override
@@ -64,7 +67,7 @@ public class SessionDetailScreen extends FishingStatsTabScreen {
         List<SidebarEntry> entries = new ArrayList<>();
         for (FishingSession s : FishingDataStore.getInstance().getSessionsNewestFirst()) {
             int id = s.id;
-            String label = "#" + id + " " + StatsFormat.dateTime(s.startTime);
+            String label = "#" + id + " " + StatsFormat.dateTimeShort(s.startTime);
             entries.add(new SidebarEntry(label, 1, id == sessionId, () -> {
                 if (id != sessionId) {
                     Minecraft.getInstance().setScreen(new SessionDetailScreen(id, parent));

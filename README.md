@@ -25,7 +25,8 @@ A client-side Minecraft Fabric mod that automatically tracks and analyzes all yo
 | `mc26.2` | 26.2 | 0.19.2+ | 25+ |
 | `mc26.1` | 26.1 | 0.18.4+ | 25+ |
 | `mc1.21.9-1.21.11` | 1.21.9 - 1.21.11 | 0.18.3+ | 21+ |
-| `mc1.21-1.21.8` | 1.21 - 1.21.8 | 0.18.3+ | 21+ |
+| `mc1.21.6-1.21.8` | 1.21.6 - 1.21.8 | 0.18.3+ | 21+ |
+| `mc1.21.5` | 1.21 - 1.21.5 | 0.18.3+ | 21+ |
 
 **Fabric API** is required; **ModMenu** and **YACL** are recommended for the in-game config screen.
 

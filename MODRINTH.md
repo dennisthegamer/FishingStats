@@ -18,7 +18,7 @@ FishingStats is a lightweight, client-side Fabric mod that automatically tracks 
 ### Live HUD Overlay
 - **Full mode** - Session duration, casts, catches, treasure rate and the last caught item
 - **Compact mode** - Clean one-line summary with casts and catches
-- **Customizable** - Position (4 corners), opacity, scale and visibility all adjustable
+- **Customizable** - Freely placeable position (drag editor with presets), opacity, scale and visibility all adjustable
 
 ### Session History & Statistics
 - **Sessions screen** - Browse all fishing sessions with date, duration, catches and treasure rate

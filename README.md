@@ -47,7 +47,7 @@ Download the matching jar for your Minecraft version from [GitHub Releases](http
 
 Open the config screen via ModMenu. Available settings:
 
-- **HUD** - Overlay on/off, compact mode, position (4 corners), opacity (0-100%), scale (50-150%), visibility mode
+- **HUD** - Overlay on/off, compact mode, freely placeable position (drag editor with presets), opacity (0-100%), scale (50-150%), visibility mode
 - **Tracking** - Track treasure only, session auto-split timeout, session persistence
 
 Keybinds are listed under **Controls > FishingStats**:

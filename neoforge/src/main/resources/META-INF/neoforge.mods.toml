@@ -50,3 +50,11 @@ type = "required"
 versionRange = "[1.0,)"
 ordering = "NONE"
 side = "CLIENT"
+
+# hudlibcore ships jar-in-jar alongside hudlib (pure Java, no Minecraft refs).
+[[dependencies.fishingstats]]
+modId = "hudlibcore"
+type = "required"
+versionRange = "[1.0,)"
+ordering = "NONE"
+side = "CLIENT"

@@ -16,7 +16,6 @@ import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.storage.LevelResource;
-import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,20 +36,20 @@ public final class FishingStatsClient {
 
     public static final KeyMapping STATS_KEY = new KeyMapping(
             "key.fishingstats.open",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_O,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_O,
             CATEGORY
     );
     public static final KeyMapping COMPACT_KEY = new KeyMapping(
             "key.fishingstats.toggle_compact",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_K,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_K,
             CATEGORY
     );
     public static final KeyMapping SESSION_TOGGLE_KEY = new KeyMapping(
             "key.fishingstats.session_toggle",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_J,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_J,
             CATEGORY
     );
 

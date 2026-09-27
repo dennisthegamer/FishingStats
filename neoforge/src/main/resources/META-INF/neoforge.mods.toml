@@ -18,14 +18,14 @@ config = "fishingstats.mixins.json"
 [[dependencies.fishingstats]]
 modId = "neoforge"
 type = "required"
-versionRange = "[26.2.0.0-beta,)"
+versionRange = "[26.3.0.0-beta,)"
 ordering = "NONE"
 side = "CLIENT"
 
 [[dependencies.fishingstats]]
 modId = "minecraft"
 type = "required"
-versionRange = "[26.2,26.3)"
+versionRange = "[26.3,26.4)"
 ordering = "NONE"
 side = "CLIENT"
 
@@ -40,13 +40,13 @@ side = "CLIENT"
 [[dependencies.fishingstats]]
 modId = "hudlib"
 type = "required"
-versionRange = "[1.1,)"
+versionRange = "[1.2,)"
 ordering = "AFTER"
 side = "CLIENT"
 
 [[dependencies.fishingstats]]
 modId = "hudlibcore"
 type = "required"
-versionRange = "[1.1,)"
+versionRange = "[1.2,)"
 ordering = "AFTER"
 side = "CLIENT"

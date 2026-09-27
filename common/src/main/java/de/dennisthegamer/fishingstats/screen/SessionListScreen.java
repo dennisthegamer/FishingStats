@@ -10,8 +10,8 @@ import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
+import com.mojang.blaze3d.platform.InputConstants;
 import org.jetbrains.annotations.NotNull;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
 
@@ -153,7 +153,7 @@ public class SessionListScreen extends FishingStatsTabScreen {
             pendingDeleteId = -1;
             return true;
         }
-        if (event.button() != 0) {
+        if (event.button() != InputConstants.MOUSE_BUTTON_LEFT) {
             pendingDeleteId = -1;
             return super.mouseClicked(event, consumed);
         }
@@ -191,7 +191,7 @@ public class SessionListScreen extends FishingStatsTabScreen {
     @Override
     public boolean keyPressed(@NotNull KeyEvent event) {
         // R = discard the active session and pause tracking
-        if (event.key() == GLFW.GLFW_KEY_R) {
+        if (event.key() == InputConstants.KEY_R) {
             SessionManager.getInstance().resetSession();
             scrollOffset = 0;
             statusMessage = I18n.get("fishingstats.sessions.reset_confirm");

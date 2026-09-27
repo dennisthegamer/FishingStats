@@ -54,10 +54,10 @@ dependencies {
 	implementation "maven.modrinth:yacl:${project.yacl_version}-fabric"
 
 	// HudLib (mavenLocal, jar-in-jar)
-	implementation "de.dennisthegamer:hudlib-core:1.1.1"
-	include "de.dennisthegamer:hudlib-core:1.1.1"
-	implementation "de.dennisthegamer:hudlib-ui:1.1.1+mc${project.minecraft_range}"
-	include "de.dennisthegamer:hudlib-ui:1.1.1+mc${project.minecraft_range}"
+	implementation "de.dennisthegamer:hudlib-core:${project.hudlib_version}"
+	include "de.dennisthegamer:hudlib-core:${project.hudlib_version}"
+	implementation "de.dennisthegamer:hudlib-ui:${project.hudlib_version}+mc${project.hudlib_mc_range}"
+	include "de.dennisthegamer:hudlib-ui:${project.hudlib_version}+mc${project.hudlib_mc_range}"
 }
 
 loom {

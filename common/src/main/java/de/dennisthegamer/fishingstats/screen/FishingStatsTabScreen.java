@@ -1,5 +1,6 @@
 package de.dennisthegamer.fishingstats.screen;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -185,7 +186,7 @@ public abstract class FishingStatsTabScreen extends Screen {
     /** Subclasses call this FIRST in mouseClicked so sidebar clicks never reach the content. */
     protected boolean handleSidebarClick(MouseButtonEvent event) {
         if (event.x() >= SIDEBAR_WIDTH || event.y() < HEADER_HEIGHT) return false;
-        if (event.button() != 0) return true;
+        if (event.button() != InputConstants.MOUSE_BUTTON_LEFT) return true;
 
         for (SidebarRow row : layoutRows()) {
             if (row.bottom() <= HEADER_HEIGHT || row.top() >= height) continue;
